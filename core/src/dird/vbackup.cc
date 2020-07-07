@@ -74,7 +74,7 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
 
   ApplyPoolOverrides(jcr);
 
-  if (!AllowDuplicateJob(jcr)) { return false; }
+  jcr->impl->IgnoreDuplicateJobChecking = true;
 
   jcr->impl->jr.PoolId
       = GetOrCreatePoolRecord(jcr, jcr->impl->res.pool->resource_name_);
