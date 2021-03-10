@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -392,21 +392,7 @@ static char* get_previous_keyword(int current_point, int nb)
   return s;
 }
 
-struct ItemList {
-  alist list; /* holds the completion list */
-};
-
-static ItemList* items = NULL;
-void init_items()
-{
-  if (!items) {
-    items = (ItemList*)malloc(sizeof(ItemList));
-    items = new (items) ItemList(); /* placement new instead of memset */
-  } else {
-    items->list.destroy();
-    items->list.init();
-  }
-}
+static std::vector<std::string> list;
 
 /**
  * Match a regexp and add the result to the items list
@@ -426,7 +412,7 @@ static void match_kw(regex_t* preg, const char* what, int len, POOLMEM*& buf)
     memcpy(buf, what + pmatch[1].rm_so, size);
     buf[size] = '\0';
 
-    items->list.append(strdup(buf));
+    list.push_back(buf);
 
     /* search for next keyword */
     match_kw(preg, what + pmatch[1].rm_eo, len - pmatch[1].rm_eo, buf);
@@ -439,7 +425,7 @@ void GetArguments(const char* what)
   regex_t preg{};
   POOLMEM* buf;
   int rc;
-  init_items();
+  list.clear();
 
   rc = regcomp(&preg, "(([a-z_]+=)|([a-z]+)( |$))", REG_EXTENDED);
   if (rc != 0) { return; }
@@ -454,15 +440,15 @@ void GetArguments(const char* what)
   regfree(&preg);
 }
 
-/* retreive a simple list (.pool, .client) and store it into items */
+/* retrieve a simple list (.pool, .client) and store it into items */
 static void GetItems(const char* what)
 {
-  init_items();
+  list.clear();
 
   UA_sock->fsend("%s", what);
   while (UA_sock->recv() > 0) {
     StripTrailingJunk(UA_sock->msg);
-    items->list.append(strdup(UA_sock->msg));
+    list.push_back(UA_sock->msg);
   }
 }
 
@@ -477,8 +463,8 @@ static char* item_generator(const char* text,
                             const char* item,
                             cpl_item_t type)
 {
-  static int list_index, len;
-  char* name;
+  static std::size_t list_index, len;
+  const char* name;
 
   if (!state) {
     list_index = 0;
@@ -493,8 +479,8 @@ static char* item_generator(const char* text,
     }
   }
 
-  while (items && list_index < items->list.size()) {
-    name = (char*)items->list[list_index];
+  while (list_index < list.size()) {
+    name = list[list_index].c_str();
     list_index++;
 
     if (bstrncmp(name, text, len)) {
@@ -577,7 +563,8 @@ static char** readline_completion(const char* text, int start, int end)
   if (s) {
     for (int i = 0; i < key_size; i++) {
       /*
-       * See if this keyword is allowed with the current file_selection setting.
+       * See if this keyword is allowed with the current file_selection
+       * setting.
        */
       if (cpl_keywords[i].file_selection != file_selection) { continue; }
 
@@ -1099,7 +1086,7 @@ int main(int argc, char* argv[])
     TerminateConsole(0);
     return 1;
 #endif /* HAVE_PAM */
-  }    /* kMessageIdPamRequired */
+  } /* kMessageIdPamRequired */
 
   if (response_id == kMessageIdOk) {
     ConsoleOutput(response_args.JoinReadable().c_str());
