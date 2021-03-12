@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -60,7 +60,8 @@ static struct backend_interface_mapping_t {
 /**
  * All loaded backends.
  */
-static alist* loaded_backends = NULL;
+static std::vector<backend_shared_library_t*> loaded_backends;
+// static alist* loaded_backends = NULL;
 static std::vector<std::string> backend_dirs;
 
 void DbSetBackendDirs(std::vector<std::string>& new_backend_dirs)
@@ -153,8 +154,8 @@ BareosDb* db_init_database(JobControlRecord* jcr,
   /*
    * See if the backend is already loaded.
    */
-  if (loaded_backends) {
-    foreach_alist (backend_shared_library, loaded_backends) {
+  if (loaded_backends.size() > 0) {
+    for (auto& backend_shared_library : loaded_backends) {
       if (backend_shared_library->interface_type_id
           == backend_interface_mapping->interface_type_id) {
         return backend_shared_library->backend_instantiate(
@@ -255,10 +256,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
     backend_shared_library->backend_instantiate = backend_instantiate;
     backend_shared_library->flush_backend = flush_backend;
 
-    if (loaded_backends == NULL) {
-      loaded_backends = new alist(10, not_owned_by_alist);
-    }
-    loaded_backends->append(backend_shared_library);
+    loaded_backends.push_back(backend_shared_library);
 
     Dmsg1(100, "db_init_database: loaded backend %s\n",
           shared_library_name.c_str());
@@ -277,10 +275,8 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 
 void DbFlushBackends(void)
 {
-  backend_shared_library_t* backend_shared_library = nullptr;
-
-  if (loaded_backends) {
-    foreach_alist (backend_shared_library, loaded_backends) {
+  if (loaded_backends.size() > 0) {
+    for (auto backend_shared_library : loaded_backends) {
       /*
        * Call the flush entry point in the lib.
        */
@@ -293,8 +289,7 @@ void DbFlushBackends(void)
       free(backend_shared_library);
     }
 
-    delete loaded_backends;
-    loaded_backends = NULL;
+    loaded_backends.clear();
   }
 }
 #  else
@@ -325,5 +320,5 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 
 void DbFlushBackends(void) {}
 #  endif /* HAVE_DYNAMIC_CATS_BACKENDS */
-#endif   /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
-            HAVE_DBI */
+#endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
+          HAVE_DBI */
