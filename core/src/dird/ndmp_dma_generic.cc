@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -147,12 +147,12 @@ bool NdmpValidateStorage(JobControlRecord* jcr)
 {
   StorageResource* store = nullptr;
 
-  if (jcr->impl->res.write_storage_list) {
-    foreach_alist (store, jcr->impl->res.write_storage_list) {
+  if (!jcr->impl->res.write_storage_list.empty()) {
+    for (auto store : jcr->impl->res.write_storage_list) {
       if (!NdmpValidateStorage(jcr, store)) { return false; }
     }
   } else {
-    foreach_alist (store, jcr->impl->res.read_storage_list) {
+    for (auto store : jcr->impl->res.read_storage_list) {
       if (!NdmpValidateStorage(jcr, store)) { return false; }
     }
   }

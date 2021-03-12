@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,6 +34,7 @@
  * backup. When the File daemon finishes the job, update the DB.
  */
 
+#include <cstddef>
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
@@ -56,6 +57,7 @@
 #include "lib/edit.h"
 #include "lib/berrno.h"
 #include "lib/util.h"
+#include "ua.h"
 
 namespace directordaemon {
 
@@ -131,9 +133,7 @@ char* StorageAddressToContact(StorageResource* read_storage,
 
 static inline bool ValidateStorage(JobControlRecord* jcr)
 {
-  StorageResource* store = nullptr;
-
-  foreach_alist (store, jcr->impl->res.write_storage_list) {
+  for (auto store : jcr->impl->res.write_storage_list) {
     switch (store->Protocol) {
       case APT_NATIVE:
         continue;
@@ -166,7 +166,7 @@ bool DoNativeBackupInit(JobControlRecord* jcr)
    * If pool storage specified, use it instead of job storage
    */
   CopyWstorage(jcr, jcr->impl->res.pool->storage, _("Pool resource"));
-  if (!jcr->impl->res.write_storage_list) {
+  if (jcr->impl->res.write_storage_list.empty()) {
     Jmsg(jcr, M_FATAL, 0,
          _("No Storage specification found in Job or Pool.\n"));
     return false;
@@ -444,7 +444,9 @@ bool DoNativeBackup(JobControlRecord* jcr)
   /*
    * Now start a job with the Storage daemon
    */
-  if (!StartStorageDaemonJob(jcr, NULL, jcr->impl->res.write_storage_list)) {
+  std::list<directordaemon::StorageResource*> emptyStorageList;
+  if (!StartStorageDaemonJob(jcr, emptyStorageList,
+                             jcr->impl->res.write_storage_list)) {
     return false;
   }
 

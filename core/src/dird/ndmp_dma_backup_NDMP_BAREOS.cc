@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -154,7 +154,7 @@ bool DoNdmpBackupInit(JobControlRecord* jcr)
    */
   CopyWstorage(jcr, jcr->impl->res.pool->storage, _("Pool resource"));
 
-  if (!jcr->impl->res.write_storage_list) {
+  if (jcr->impl->res.write_storage_list.empty()) {
     Jmsg(jcr, M_FATAL, 0,
          _("No Storage specification found in Job or Pool.\n"));
     return false;
@@ -247,7 +247,9 @@ bool DoNdmpBackup(JobControlRecord* jcr)
     /*
      * Now start a job with the Storage daemon
      */
-    if (!StartStorageDaemonJob(jcr, NULL, jcr->impl->res.write_storage_list)) {
+    std::list<directordaemon::StorageResource*> empty_storage_list;
+    if (!StartStorageDaemonJob(jcr, empty_storage_list,
+                               jcr->impl->res.write_storage_list)) {
       return false;
     }
 

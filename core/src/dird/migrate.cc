@@ -264,7 +264,7 @@ bool SetMigrationWstorage(JobControlRecord* jcr,
     return false;
   }
 
-  if (!next_pool->storage || next_pool->storage->size() == 0) {
+  if (next_pool->storage.empty()) {
     Jmsg(jcr, M_FATAL, 0,
          _("No Storage specification found in Next Pool \"%s\".\n"),
          next_pool->resource_name_);
@@ -371,8 +371,8 @@ static inline bool SameStorage(JobControlRecord* jcr)
 {
   StorageResource *read_store, *write_store;
 
-  read_store = (StorageResource*)jcr->impl->res.read_storage_list->first();
-  write_store = (StorageResource*)jcr->impl->res.write_storage_list->first();
+  read_store = jcr->impl->res.read_storage_list.front();
+  write_store = jcr->impl->res.write_storage_list.front();
 
   if (!read_store->autochanger && !write_store->autochanger
       && bstrcmp(read_store->resource_name_, write_store->resource_name_)) {
@@ -1294,7 +1294,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
      * This only happens when the original pool used doesn't have an explicit
      * storage.
      */
-    if (!jcr->impl->res.read_storage_list) {
+    if (jcr->impl->res.read_storage_list.empty()) {
       CopyRstorage(jcr, prev_job->storage, _("previous Job"));
     }
 
@@ -1395,13 +1395,11 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
   if (HasPairedStorage(jcr)) { SetPairedStorage(jcr); }
 
   Dmsg2(dbglevel, "Read store=%s, write store=%s\n",
-        ((StorageResource*)jcr->impl->res.read_storage_list->first())
-            ->resource_name_,
-        ((StorageResource*)jcr->impl->res.write_storage_list->first())
-            ->resource_name_);
+        (jcr->impl->res.read_storage_list.front())->resource_name_,
+        (jcr->impl->res.write_storage_list.front())->resource_name_);
 
   if (jcr->impl->remote_replicate) {
-    alist* write_storage_list;
+    std::list<directordaemon::StorageResource*> write_storage_list;
 
     /*
      * See if we need to apply any bandwidth limiting.
@@ -1462,7 +1460,9 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
     /*
      * Now start a job with the Reading Storage daemon
      */
-    if (!StartStorageDaemonJob(jcr, jcr->impl->res.read_storage_list, NULL,
+    std::list<directordaemon::StorageResource*> empty_storage_list;
+    if (!StartStorageDaemonJob(jcr, jcr->impl->res.read_storage_list,
+                               empty_storage_list,
                                /* send_bsr */ true)) {
       goto bail_out;
     }
@@ -1473,7 +1473,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
      * Now start a job with the Writing Storage daemon
      */
 
-    if (!StartStorageDaemonJob(mig_jcr, NULL,
+    if (!StartStorageDaemonJob(mig_jcr, empty_storage_list,
                                mig_jcr->impl->res.write_storage_list,
                                /* send_bsr */ false)) {
       goto bail_out;
@@ -1641,7 +1641,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
 
 bail_out:
   if (jcr->impl->remote_replicate && mig_jcr) {
-    alist* write_storage_list;
+    std::list<directordaemon::StorageResource*> write_storage_list;
 
     /*
      * Swap the write_storage_list between the jcr and the mig_jcr.

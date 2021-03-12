@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -643,8 +643,8 @@ bool CancelStorageDaemonJob(UaContext* ua,
                             JobControlRecord* jcr,
                             bool interactive)
 {
-  if (!ua->jcr->impl->res.write_storage_list) {
-    if (jcr->impl->res.read_storage_list) {
+  if (ua->jcr->impl->res.write_storage_list.empty()) {
+    if (!jcr->impl->res.read_storage_list.empty()) {
       CopyWstorage(ua->jcr, jcr->impl->res.read_storage_list,
                    _("Job resource"));
     } else {
@@ -653,7 +653,7 @@ bool CancelStorageDaemonJob(UaContext* ua,
     }
   } else {
     UnifiedStorageResource store;
-    if (jcr->impl->res.read_storage_list) {
+    if (!jcr->impl->res.read_storage_list.empty()) {
       store.store = jcr->impl->res.read_storage;
     } else {
       store.store = jcr->impl->res.write_storage;

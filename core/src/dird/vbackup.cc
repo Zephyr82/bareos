@@ -3,7 +3,7 @@
 
    Copyright (C) 2008-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -176,12 +176,12 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   char ed1[100];
   int JobLevel_of_first_job;
 
-  if (!jcr->impl->res.read_storage_list) {
+  if (jcr->impl->res.read_storage_list.empty()) {
     Jmsg(jcr, M_FATAL, 0, _("No storage for reading given.\n"));
     return false;
   }
 
-  if (!jcr->impl->res.write_storage_list) {
+  if (jcr->impl->res.write_storage_list.empty()) {
     Jmsg(jcr, M_FATAL, 0, _("No storage for writing given.\n"));
     return false;
   }
@@ -189,10 +189,8 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   Dmsg2(100, "read_storage_list=%p write_storage_list=%p\n",
         jcr->impl->res.read_storage_list, jcr->impl->res.write_storage_list);
   Dmsg2(100, "Read store=%s, write store=%s\n",
-        ((StorageResource*)jcr->impl->res.read_storage_list->first())
-            ->resource_name_,
-        ((StorageResource*)jcr->impl->res.write_storage_list->first())
-            ->resource_name_);
+        (jcr->impl->res.read_storage_list.front())->resource_name_,
+        (jcr->impl->res.write_storage_list.front())->resource_name_);
 
   /*
    * Print Job Start message

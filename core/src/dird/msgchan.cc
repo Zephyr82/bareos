@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,6 +49,7 @@
 #include "lib/util.h"
 #include "lib/thread_specific_data.h"
 #include "lib/watchdog.h"
+#include "ua.h"
 
 namespace directordaemon {
 
@@ -121,13 +122,13 @@ static inline bool SendBootstrapFileToSd(JobControlRecord* jcr,
 
 /** Start a job with the Storage daemon
  */
-bool StartStorageDaemonJob(JobControlRecord* jcr,
-                           alist* read_storage,
-                           alist* write_storage,
-                           bool send_bsr)
+bool StartStorageDaemonJob(
+    JobControlRecord* jcr,
+    std::list<directordaemon::StorageResource*>& read_storage,
+    std::list<directordaemon::StorageResource*>& write_storage,
+    bool send_bsr)
 {
   bool ok = true;
-  StorageResource* storage = nullptr;
   char auth_key[100];
   const char* fileset_md5;
   PoolMem StoreName, device_name, pool_name, pool_type, media_type,
@@ -253,7 +254,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
    *
    */
   /* Do read side of storage daemon */
-  if (ok && read_storage) {
+  if (ok && !read_storage.empty()) {
     /* For the moment, only migrate, copy and vbackup have rpool */
     if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)
         || (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) {
@@ -265,7 +266,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
     }
     BashSpaces(pool_type);
     BashSpaces(pool_name);
-    foreach_alist (storage, read_storage) {
+    for (auto storage : read_storage) {
       Dmsg1(100, "Rstore=%s\n", storage->resource_name_);
       PmStrcpy(StoreName, storage->resource_name_);
       BashSpaces(StoreName);
@@ -299,12 +300,12 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
   }
 
   /* Do write side of storage daemon */
-  if (ok && write_storage) {
+  if (ok && !write_storage.empty()) {
     PmStrcpy(pool_type, jcr->impl->res.pool->pool_type);
     PmStrcpy(pool_name, jcr->impl->res.pool->resource_name_);
     BashSpaces(pool_type);
     BashSpaces(pool_name);
-    foreach_alist (storage, write_storage) {
+    for (auto storage : write_storage) {
       PmStrcpy(StoreName, storage->resource_name_);
       BashSpaces(StoreName);
       PmStrcpy(media_type, storage->media_type);

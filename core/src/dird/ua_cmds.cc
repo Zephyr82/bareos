@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -583,9 +583,8 @@ bool Do_a_command(UaContext* ua)
   Dmsg1(900, "Command: %s\n", ua->argk[0]);
   if (ua->argc == 0) { return false; }
 
-  while (ua->jcr->impl->res.write_storage_list
-         && ua->jcr->impl->res.write_storage_list->size()) {
-    ua->jcr->impl->res.write_storage_list->remove(0);
+  while (!ua->jcr->impl->res.write_storage_list.empty()) {
+    ua->jcr->impl->res.write_storage_list.pop_front();
   }
 
   len = strlen(ua->argk[0]);
