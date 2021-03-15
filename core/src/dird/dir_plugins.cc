@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,7 +42,7 @@ const char* plugin_type = "-dir.dll";
 const char* plugin_type = "-dir.so";
 #endif
 
-static alist* dird_plugin_list;
+static std::vector<Plugin*> dird_plugin_list;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Forward referenced functions */
@@ -122,14 +122,15 @@ static bool IsCtxGood(PluginContext* ctx,
   return true;
 }
 
-static inline bool trigger_plugin_event(JobControlRecord* jcr,
-                                        bDirEventType eventType,
-                                        bDirEvent* event,
-                                        PluginContext* ctx,
-                                        void* value,
-                                        alist* plugin_ctx_list,
-                                        int* index,
-                                        bRC* rc)
+static inline bool trigger_plugin_event(
+    JobControlRecord* jcr,
+    bDirEventType eventType,
+    bDirEvent* event,
+    PluginContext* ctx,
+    void* value,
+    std::vector<PluginContext*> plugin_ctx_list,
+    int* index,
+    bRC* rc)
 {
   bool stop = false;
 
@@ -199,11 +200,11 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
 {
   int i;
   bDirEvent event;
-  alist* plugin_ctx_list;
+  std::vector<PluginContext*> plugin_ctx_list;
   bRC rc = bRC_OK;
 
-  if (!dird_plugin_list) {
-    Dmsg0(debuglevel, "No bplugin_list: GeneratePluginEvent ignored.\n");
+  if (dird_plugin_list.empty()) {
+    Dmsg0(debuglevel, "sd_plugin_list empty: GeneratePluginEvent ignored.\n");
     goto bail_out;
   }
 
@@ -215,7 +216,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
   /*
    * Return if no plugins loaded
    */
-  if (!jcr->plugin_ctx_list) {
+  if (jcr->plugin_ctx_list.empty()) {
     Dmsg0(debuglevel, "No plugin_ctx_list: GeneratePluginEvent ignored.\n");
     goto bail_out;
   }
@@ -230,18 +231,14 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
    * See if we need to trigger the loaded plugins in reverse order.
    */
   if (reverse) {
-    PluginContext* ctx;
-
-    foreach_alist_rindex (i, ctx, plugin_ctx_list) {
+    for (auto ctx : plugin_ctx_list) {
       if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
                                plugin_ctx_list, &i, &rc)) {
         break;
       }
     }
   } else {
-    PluginContext* ctx;
-
-    foreach_alist_index (i, ctx, plugin_ctx_list) {
+    for (auto ctx : plugin_ctx_list) {
       if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
                                plugin_ctx_list, &i, &rc)) {
         break;
@@ -285,23 +282,18 @@ static void DumpDirPlugins(FILE* fp) { DumpPlugins(dird_plugin_list, fp); }
  */
 void LoadDirPlugins(const char* plugin_dir, alist* plugin_names)
 {
-  Plugin* plugin;
-  int i;
-
   Dmsg0(debuglevel, "Load dir plugins\n");
   if (!plugin_dir) {
     Dmsg0(debuglevel, "No dir plugin dir!\n");
     return;
   }
 
-  dird_plugin_list = new alist(10, not_owned_by_alist);
+  dird_plugin_list.clear();
   if (!LoadPlugins((void*)&bareos_plugin_interface_version,
                    (void*)&bareos_core_functions, dird_plugin_list, plugin_dir,
                    plugin_names, plugin_type, IsPluginCompatible)) {
     /* Either none found, or some error */
-    if (dird_plugin_list->size() == 0) {
-      delete dird_plugin_list;
-      dird_plugin_list = NULL;
+    if (!dird_plugin_list.empty()) {
       Dmsg0(debuglevel, "No plugins loaded\n");
       return;
     }
@@ -310,11 +302,11 @@ void LoadDirPlugins(const char* plugin_dir, alist* plugin_names)
    * Verify that the plugin is acceptable, and print information
    *  about it.
    */
-  foreach_alist_index (i, plugin, dird_plugin_list) {
+  for (auto plugin : dird_plugin_list) {
     Dmsg1(debuglevel, "Loaded plugin: %s\n", plugin->file);
   }
 
-  Dmsg1(debuglevel, "num plugins=%d\n", dird_plugin_list->size());
+  Dmsg1(debuglevel, "num plugins=%d\n", dird_plugin_list.size());
   DbgPluginAddHook(DumpDirPlugin);
   DbgPrintPluginAddHook(DumpDirPlugins);
 }
@@ -322,8 +314,7 @@ void LoadDirPlugins(const char* plugin_dir, alist* plugin_names)
 void UnloadDirPlugins(void)
 {
   UnloadPlugins(dird_plugin_list);
-  delete dird_plugin_list;
-  dird_plugin_list = NULL;
+  dird_plugin_list.clear();
 }
 
 int ListDirPlugins(PoolMem& msg) { return ListPlugins(dird_plugin_list, msg); }
@@ -398,7 +389,7 @@ static inline PluginContext* instantiate_plugin(JobControlRecord* jcr,
   ctx->core_private_context = (void*)b_ctx;
   ctx->plugin_private_context = NULL;
 
-  jcr->plugin_ctx_list->append(ctx);
+  jcr->plugin_ctx_list.push_back(ctx);
 
   if (DirplugFunc(plugin)->newPlugin(ctx) != bRC_OK) { b_ctx->disabled = true; }
 
@@ -421,7 +412,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
   const char* plugin_options;
   PoolMem priv_plugin_options(PM_MESSAGE);
 
-  if (!dird_plugin_list || dird_plugin_list->empty()) { return; }
+  if (dird_plugin_list.empty()) { return; }
 
   if (jcr->impl->res.job && jcr->impl->res.job->DirPluginOptions
       && jcr->impl->res.job->DirPluginOptions->size()) {
@@ -476,7 +467,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
        * See if this plugin options are for an already instantiated plugin
        * instance.
        */
-      if (jcr->plugin_ctx_list) {
+      if (!jcr->plugin_ctx_list.empty()) {
         foreach_alist (ctx, jcr->plugin_ctx_list) {
           if (ctx->instance == instance && ctx->plugin->file_len == len
               && bstrncasecmp(ctx->plugin->file, plugin_name, len)) {

@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -111,7 +111,7 @@ static bool load_a_plugin(void* bareos_plugin_interface_version,
                           const char* plugin_pathname,
                           const char* plugin_name,
                           const char* type,
-                          alist* plugin_list,
+                          std::vector<Plugin*>& plugin_list,
                           bool IsPluginCompatible(Plugin* plugin))
 {
   t_loadPlugin loadPlugin;
@@ -185,7 +185,7 @@ static bool load_a_plugin(void* bareos_plugin_interface_version,
     return false;
   }
 
-  plugin_list->append(plugin);
+  plugin_list.push_back(plugin);
 
   return true;
 }
@@ -197,7 +197,7 @@ static bool load_a_plugin(void* bareos_plugin_interface_version,
  */
 bool LoadPlugins(void* bareos_plugin_interface_version,
                  void* bareos_core_functions,
-                 alist* plugin_list,
+                 std::vector<Plugin*> plugin_list,
                  const char* plugin_dir,
                  alist* plugin_names,
                  const char* type,
@@ -335,13 +335,14 @@ bail_out:
 /*
  * Unload all the loaded plugins
  */
-void UnloadPlugins(alist* plugin_list)
+void UnloadPlugins(std::vector<Plugin*> plugin_list)
 {
-  int i{};
-  Plugin* plugin{};
+  /* int i{}; */
+  /* Plugin* plugin{}; */
 
-  if (!plugin_list) { return; }
-  foreach_alist_index (i, plugin, plugin_list) {
+  // if (!plugin_ctx_list) { return; }
+  // foreach_alist_index (i, plugin, plugin_list) {
+  for (auto plugin : plugin_list) {
     /*
      * Shut it down and unload it
      */
@@ -352,7 +353,9 @@ void UnloadPlugins(alist* plugin_list)
   }
 }
 
-void UnloadPlugin(alist* plugin_list, Plugin* plugin, int index)
+void UnloadPlugin(std::vector<PluginContext*> plugin_ctx_list,
+                  Plugin* plugin,
+                  int index)
 {
   /*
    * Shut it down and unload it
@@ -360,19 +363,18 @@ void UnloadPlugin(alist* plugin_list, Plugin* plugin, int index)
   plugin->unloadPlugin();
   dlclose(plugin->plugin_handle);
   if (plugin->file) { free(plugin->file); }
-  plugin_list->remove(index);
+  // plugin_ctx_list->remove(index);
+  plugin_ctx_list.erase(plugin_ctx_list.begin() + index);
   free(plugin);
 }
 
-int ListPlugins(alist* plugin_list, PoolMem& msg)
+int ListPlugins(std::vector<Plugin*> plugin_list, PoolMem& msg)
 {
-  int i{};
   int len{};
-  Plugin* plugin{};
 
-  if (plugin_list && plugin_list->size() > 0) {
+  if (!plugin_list.empty()) {
     PmStrcpy(msg, "Plugin Info:\n");
-    foreach_alist_index (i, plugin, plugin_list) {
+    for (auto plugin : plugin_list) {
       PmStrcat(msg, " Plugin     : ");
       len = PmStrcat(msg, plugin->file);
       if (plugin->plugin_information) {
@@ -433,15 +435,12 @@ void DbgPrintPluginAddHook(dbg_print_plugin_hook_t* fct)
   dbg_print_plugin_hook = fct;
 }
 
-void DumpPlugins(alist* plugin_list, FILE* fp)
+void DumpPlugins(std::vector<Plugin*> plugin_list, FILE* fp)
 {
-  int i{};
-  Plugin* plugin{};
   fprintf(fp, "Attempt to dump plugins. Hook count=%d\n",
           dbg_plugin_hook_count);
 
-  if (!plugin_list) { return; }
-  foreach_alist_index (i, plugin, plugin_list) {
+  for (auto plugin : plugin_list) {
     for (int i = 0; i < dbg_plugin_hook_count; i++) {
       //       dbg_plugin_hook_t *fct = dbg_plugin_hooks[i];
       fprintf(fp, "Plugin %p name=\"%s\"\n", plugin, plugin->file);
@@ -451,10 +450,10 @@ void DumpPlugins(alist* plugin_list, FILE* fp)
 }
 
 /*
- * Bounce from library to daemon and back to get the proper plugin_list.
+ * Bounce from library to daemon and back to get the proper plugin_ctx_list.
  * As the function is called from the signal context we don't have the
- * plugin_list as argument and we don't want to expose it as global variable.
- * If the daemon didn't register a dump plugin function this is a NOP.
+ * plugin_ctx_list as argument and we don't want to expose it as global
+ * variable. If the daemon didn't register a dump plugin function this is a NOP.
  */
 void DbgPrintPlugin(FILE* fp)
 {

@@ -78,9 +78,8 @@ endif()
 if(BUILD_BAREOS_BINARIES)
   add_subdirectory(core)
   add_subdirectory(webui)
-  if(NOT client-only AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    add_subdirectory(systemtests)
-  endif()
+  # if(NOT client-only AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  # add_subdirectory(systemtests) endif()
 endif()
 
 if(docs

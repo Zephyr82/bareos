@@ -220,7 +220,7 @@ class JobControlRecord {
   AttributesDbRecord* ar{}; /**< DB attribute record */
   guid_list* id_list{};     /**< User/group id to name list */
 
-  alist* plugin_ctx_list{}; /**< List of contexts for plugins */
+  std::vector<PluginContext*> plugin_ctx_list{}; /**< List of contexts for plugins */
   PluginContext* plugin_ctx{};  /**< Current plugin context */
   POOLMEM* comment{};       /**< Comment for this Job */
   int64_t max_bandwidth{};  /**< Bandwidth limit for this Job */

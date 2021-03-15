@@ -103,14 +103,17 @@ class alist;
 /* Functions */
 bool LoadPlugins(void* bareos_plugin_interface_version,
                  void* bareos_core_functions,
-                 alist* plugin_list,
+                 std::vector<Plugin*> plugin_list,
                  const char* plugin_dir,
                  alist* plugin_names,
                  const char* type,
                  bool IsPluginCompatible(Plugin* plugin));
-void UnloadPlugins(alist* plugin_list);
-void UnloadPlugin(alist* plugin_list, Plugin* plugin, int index);
-int ListPlugins(alist* plugin_list, PoolMem& msg);
+void UnloadPlugins(std::vector<Plugin*> plugin_list);
+
+void UnloadPlugin(std::vector<PluginContext*> plugin_context_list,
+                  Plugin* plugin,
+                  int index);
+int ListPlugins(std::vector<Plugin*> plugin_list, PoolMem& msg);
 
 /* Each daemon can register a debug hook that will be called
  * after a fatal signal
@@ -119,6 +122,6 @@ typedef void(dbg_plugin_hook_t)(Plugin* plug, FILE* fp);
 void DbgPluginAddHook(dbg_plugin_hook_t* fct);
 typedef void(dbg_print_plugin_hook_t)(FILE* fp);
 void DbgPrintPluginAddHook(dbg_print_plugin_hook_t* fct);
-void DumpPlugins(alist* plugin_list, FILE* fp);
+void DumpPlugins(std::vector<Plugin*> plugin_list, FILE* fp);
 
 #endif  // BAREOS_LIB_PLUGINS_H_

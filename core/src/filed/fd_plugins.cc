@@ -70,7 +70,7 @@ const char* plugin_type = "-fd.dll";
 #else
 const char* plugin_type = "-fd.so";
 #endif
-static alist* fd_plugin_list = NULL;
+static std::vector<Plugin*> fd_plugin_list;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 extern int SaveFile(JobControlRecord* jcr,
@@ -271,14 +271,15 @@ static bool IsEventForThisPlugin(Plugin* plugin, char* name, int len)
 /**
  * Raise a certain plugin event.
  */
-static inline bool trigger_plugin_event(JobControlRecord* jcr,
-                                        bEventType eventType,
-                                        bEvent* event,
-                                        PluginContext* ctx,
-                                        void* value,
-                                        alist* plugin_ctx_list,
-                                        int* index,
-                                        bRC* rc)
+static inline bool trigger_plugin_event(
+    JobControlRecord* jcr,
+    bEventType eventType,
+    bEvent* event,
+    PluginContext* ctx,
+    void* value,
+    std::vector<PluginContext*> plugin_ctx_list,
+    int* index,
+    bRC* rc)
 
 {
   bool stop = false;
@@ -368,11 +369,10 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
   int len = 0;
   bool call_if_canceled = false;
   restore_object_pkt* rop;
-  PluginContext* ctx = nullptr;
-  alist* plugin_ctx_list;
+  std::vector<PluginContext*> plugin_ctx_list;
   bRC rc = bRC_OK;
 
-  if (!fd_plugin_list) {
+  if (fd_plugin_list.empty()) {
     Dmsg0(debuglevel, "No bplugin_list: GeneratePluginEvent ignored.\n");
     goto bail_out;
   }
@@ -382,8 +382,8 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
     goto bail_out;
   }
 
-  if (!jcr->plugin_ctx_list) {
-    Dmsg0(debuglevel, "No plugin_ctx_list: GeneratePluginEvent ignored.\n");
+  if (jcr->plugin_ctx_list.empty()) {
+    Dmsg0(debuglevel, "plugin_ctx_list empty: GeneratePluginEvent ignored.\n");
     goto bail_out;
   }
 
@@ -419,7 +419,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
       call_if_canceled = true; /* plugin *must* see this call */
       break;
     case bEventStartRestoreJob:
-      foreach_alist (ctx, plugin_ctx_list) {
+      for (auto ctx : plugin_ctx_list) {
         ((b_plugin_ctx*)ctx->core_private_context)->restoreFileStarted = false;
         ((b_plugin_ctx*)ctx->core_private_context)->createFileCalled = false;
       }
@@ -448,21 +448,23 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
    */
   if (reverse) {
     int i{};
-    foreach_alist_rindex (i, ctx, plugin_ctx_list) {
-      if (!IsEventForThisPlugin(ctx->plugin, name, len)) {
+    for (auto ctx = plugin_ctx_list.rbegin(); ctx != plugin_ctx_list.rend();
+         ++ctx) {
+      if (!IsEventForThisPlugin((*ctx)->plugin, name, len)) {
         Dmsg2(debuglevel, "Not for this plugin name=%s NULL=%d\n", name,
               (name == NULL) ? 1 : 0);
         continue;
       }
 
-      if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
+      if (trigger_plugin_event(jcr, eventType, &event, *ctx, value,
                                plugin_ctx_list, &i, &rc)) {
         break;
       }
     }
   } else {
     int i{};
-    foreach_alist_index (i, ctx, plugin_ctx_list) {
+    for (auto ctx : plugin_ctx_list) {
+      // foreach_alist_index (i, ctx, plugin_ctx_list) {
       if (!IsEventForThisPlugin(ctx->plugin, name, len)) {
         Dmsg2(debuglevel, "Not for this plugin name=%s NULL=%d\n", name,
               (name == NULL) ? 1 : 0);
@@ -490,11 +492,11 @@ bail_out:
  */
 bool PluginCheckFile(JobControlRecord* jcr, char* fname)
 {
-  PluginContext* ctx = nullptr;
-  alist* plugin_ctx_list;
+  /* PluginContext* ctx = nullptr; */
+  std::vector<PluginContext*> plugin_ctx_list;
   int retval = bRC_OK;
 
-  if (!fd_plugin_list || !jcr || !jcr->plugin_ctx_list
+  if (fd_plugin_list.empty() || !jcr || (jcr->plugin_ctx_list.empty())
       || jcr->IsJobCanceled()) {
     return false; /* Return if no plugins loaded */
   }
@@ -506,7 +508,8 @@ bool PluginCheckFile(JobControlRecord* jcr, char* fname)
   /*
    * Pass event to every plugin
    */
-  foreach_alist (ctx, plugin_ctx_list) {
+
+  for (auto ctx : plugin_ctx_list) {
     if (IsPluginDisabled(ctx)) { continue; }
 
     jcr->plugin_ctx = ctx;
@@ -606,8 +609,7 @@ bRC PluginOptionHandleFile(JobControlRecord* jcr,
   bRC retval = bRC_Core;
   bEvent event;
   bEventType eventType;
-  PluginContext* ctx = nullptr;
-  alist* plugin_ctx_list;
+  std::vector<PluginContext*> plugin_ctx_list;
 
   cmd = ff_pkt->plugin;
   eventType = bEventHandleBackupFile;
@@ -627,7 +629,7 @@ bRC PluginOptionHandleFile(JobControlRecord* jcr,
 
   plugin_ctx_list = jcr->plugin_ctx_list;
 
-  if (!fd_plugin_list || !plugin_ctx_list) {
+  if (fd_plugin_list.empty() || !plugin_ctx_list.empty()) {
     Jmsg1(jcr, M_FATAL, 0,
           "PluginOptionHandleFile: Command plugin \"%s\" requested, but is not "
           "loaded.\n",
@@ -648,7 +650,7 @@ bRC PluginOptionHandleFile(JobControlRecord* jcr,
   /*
    * Note, we stop the loop on the first plugin that matches the name
    */
-  foreach_alist (ctx, plugin_ctx_list) {
+  for (auto ctx : plugin_ctx_list) {
     Dmsg4(debuglevel, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file,
           ctx->plugin->file_len, cmd, len);
     if (!IsEventForThisPlugin(ctx->plugin, cmd, len)) { continue; }
@@ -691,18 +693,17 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
   bRC retval;
   char* cmd;
   bEvent event;
-  PluginContext* ctx = nullptr;
   struct save_pkt sp;
   bEventType eventType;
   PoolMem fname(PM_FNAME);
   PoolMem link(PM_FNAME);
-  alist* plugin_ctx_list;
+  std::vector<PluginContext*> plugin_ctx_list;
   char flags[FOPTS_BYTES];
 
   cmd = ff_pkt->top_fname;
   plugin_ctx_list = jcr->plugin_ctx_list;
 
-  if (!fd_plugin_list || !plugin_ctx_list) {
+  if (fd_plugin_list.empty() || plugin_ctx_list.empty()) {
     Jmsg1(jcr, M_FATAL, 0,
           "PluginSave: Command plugin \"%s\" requested, but is not "
           "loaded.\n",
@@ -728,7 +729,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
   /*
    * Note, we stop the loop on the first plugin that matches the name
    */
-  foreach_alist (ctx, plugin_ctx_list) {
+  for (auto ctx : plugin_ctx_list) {
     Dmsg4(debuglevel, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file,
           ctx->plugin->file_len, cmd, len);
     if (!IsEventForThisPlugin(ctx->plugin, cmd, len)) { continue; }
@@ -951,12 +952,11 @@ int PluginEstimate(JobControlRecord* jcr,
   bEventType eventType;
   PoolMem fname(PM_FNAME);
   PoolMem link(PM_FNAME);
-  PluginContext* ctx = nullptr;
-  alist* plugin_ctx_list;
+  std::vector<PluginContext*> plugin_ctx_list;
   Attributes attr;
 
   plugin_ctx_list = jcr->plugin_ctx_list;
-  if (!fd_plugin_list || !plugin_ctx_list) {
+  if (fd_plugin_list.empty() || plugin_ctx_list.empty()) {
     Jmsg1(jcr, M_FATAL, 0,
           "Command plugin \"%s\" requested, but is not loaded.\n", cmd);
     return 1; /* Return if no plugins loaded */
@@ -971,7 +971,7 @@ int PluginEstimate(JobControlRecord* jcr,
   /*
    * Note, we stop the loop on the first plugin that matches the name
    */
-  foreach_alist (ctx, plugin_ctx_list) {
+  for (auto ctx : plugin_ctx_list) {
     Dmsg4(debuglevel, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file,
           ctx->plugin->file_len, cmd, len);
     if (!IsEventForThisPlugin(ctx->plugin, cmd, len)) { continue; }
@@ -1156,8 +1156,7 @@ bool PluginNameStream(JobControlRecord* jcr, char* name)
   char* p = name;
   bool start;
   bool retval = true;
-  PluginContext* ctx = nullptr;
-  alist* plugin_ctx_list;
+  std::vector<PluginContext*> plugin_ctx_list;
 
   Dmsg1(debuglevel, "Read plugin stream string=%s\n", name);
   SkipNonspaces(&p); /* skip over jcr->JobFiles */
@@ -1202,7 +1201,7 @@ bool PluginNameStream(JobControlRecord* jcr, char* name)
   }
 
   plugin_ctx_list = jcr->plugin_ctx_list;
-  if (!plugin_ctx_list) { goto bail_out; }
+  if (plugin_ctx_list.empty()) { goto bail_out; }
 
   /*
    * After this point, we are dealing with a restore start
@@ -1212,7 +1211,7 @@ bool PluginNameStream(JobControlRecord* jcr, char* name)
   /*
    * Search for correct plugin as specified on the command
    */
-  foreach_alist (ctx, plugin_ctx_list) {
+  for (auto ctx : plugin_ctx_list) {
     bEvent event;
     bEventType eventType;
     b_plugin_ctx* b_ctx;
@@ -1730,23 +1729,20 @@ static void DumpFdPlugins(FILE* fp) { DumpPlugins(fd_plugin_list, fp); }
  */
 void LoadFdPlugins(const char* plugin_dir, alist* plugin_names)
 {
-  Plugin* plugin;
-
   if (!plugin_dir) {
     Dmsg0(debuglevel, "plugin dir is NULL\n");
     return;
   }
 
-  fd_plugin_list = new alist(10, not_owned_by_alist);
+  fd_plugin_list.clear();
+
   if (!LoadPlugins((void*)&bareos_plugin_interface_version,
                    (void*)&bareos_core_functions, fd_plugin_list, plugin_dir,
                    plugin_names, plugin_type, IsPluginCompatible)) {
     /*
      * Either none found, or some error
      */
-    if (fd_plugin_list->size() == 0) {
-      delete fd_plugin_list;
-      fd_plugin_list = NULL;
+    if (fd_plugin_list.empty()) {
       Dmsg0(debuglevel, "No plugins loaded\n");
       return;
     }
@@ -1764,8 +1760,7 @@ void LoadFdPlugins(const char* plugin_dir, alist* plugin_names)
   /*
    * Verify that the plugin is acceptable, and print information about it.
    */
-  int i{0};
-  foreach_alist_index (i, plugin, fd_plugin_list) {
+  for (auto plugin : fd_plugin_list) {
     Dmsg1(debuglevel, "Loaded plugin: %s\n", plugin->file);
   }
 
@@ -1776,8 +1771,7 @@ void LoadFdPlugins(const char* plugin_dir, alist* plugin_names)
 void UnloadFdPlugins(void)
 {
   UnloadPlugins(fd_plugin_list);
-  delete fd_plugin_list;
-  fd_plugin_list = NULL;
+  fd_plugin_list.clear();
 }
 
 int ListFdPlugins(PoolMem& msg) { return ListPlugins(fd_plugin_list, msg); }
@@ -1852,7 +1846,7 @@ static inline PluginContext* instantiate_plugin(JobControlRecord* jcr,
   ctx->core_private_context = (void*)b_ctx;
   ctx->plugin_private_context = NULL;
 
-  jcr->plugin_ctx_list->append(ctx);
+  jcr->plugin_ctx_list.push_back(ctx);
 
   if (PlugFunc(plugin)->newPlugin(ctx) != bRC_OK) { b_ctx->disabled = true; }
 
@@ -1867,28 +1861,26 @@ static inline PluginContext* instantiate_plugin(JobControlRecord* jcr,
  */
 void NewPlugins(JobControlRecord* jcr)
 {
-  Plugin* plugin;
-
-  if (!fd_plugin_list) {
-    Dmsg0(debuglevel, "plugin list is NULL\n");
+  if (fd_plugin_list.empty()) {
+    Dmsg0(debuglevel, "plugin list is empty\n");
     return;
   }
 
   if (jcr->IsJobCanceled()) { return; }
 
   int num;
-  num = fd_plugin_list->size();
+  num = fd_plugin_list.size();
   if (num == 0) {
     Dmsg0(debuglevel, "No plugins loaded\n");
     return;
   }
 
-  jcr->plugin_ctx_list = new alist(10, owned_by_alist);
+  // jcr->plugin_ctx_list = new alist(10, owned_by_alist);
+  jcr->plugin_ctx_list.clear();
   Dmsg2(debuglevel, "Instantiate plugin_ctx=%p JobId=%d\n",
         jcr->plugin_ctx_list, jcr->JobId);
 
-  int i{};
-  foreach_alist_index (i, plugin, fd_plugin_list) {
+  for (auto plugin : fd_plugin_list) {
     /*
      * Start a new instance of each plugin
      */
@@ -1901,22 +1893,17 @@ void NewPlugins(JobControlRecord* jcr)
  */
 void FreePlugins(JobControlRecord* jcr)
 {
-  PluginContext* ctx = nullptr;
-
-  if (!fd_plugin_list || !jcr->plugin_ctx_list) { return; }
+  if (fd_plugin_list.empty() || jcr->plugin_ctx_list.empty()) { return; }
 
   Dmsg2(debuglevel, "Free instance fd-plugin_ctx_list=%p JobId=%d\n",
         jcr->plugin_ctx_list, jcr->JobId);
-  foreach_alist (ctx, jcr->plugin_ctx_list) {
-    /*
-     * Free the plugin instance
-     */
+  for (auto ctx : jcr->plugin_ctx_list) {
+    /* * Free the plugin instance */
     PlugFunc(ctx->plugin)->freePlugin(ctx);
     free(ctx->core_private_context); /* Free BAREOS private context */
   }
 
-  delete jcr->plugin_ctx_list;
-  jcr->plugin_ctx_list = NULL;
+  jcr->plugin_ctx_list.clear();
 }
 
 /**
@@ -2278,7 +2265,6 @@ static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
 {
   int cnt;
   JobControlRecord *jcr, *njcr;
-  PluginContext* nctx;
   b_plugin_ctx* bctx;
   bRC retval = bRC_Error;
 
@@ -2288,8 +2274,8 @@ static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
 
   cnt = 0;
   foreach_jcr (njcr) {
-    if (jcr->plugin_ctx_list) {
-      foreach_alist (nctx, jcr->plugin_ctx_list) {
+    if (!jcr->plugin_ctx_list.empty()) {
+      for (auto nctx : jcr->plugin_ctx_list) {
         if (nctx->plugin == bctx->plugin) { cnt++; }
       }
     }
