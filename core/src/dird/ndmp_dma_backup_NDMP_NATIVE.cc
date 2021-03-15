@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -487,7 +487,7 @@ bool DoNdmpBackupInitNdmpNative(JobControlRecord* jcr)
    */
   CopyWstorage(jcr, jcr->impl->res.pool->storage, _("Pool resource"));
 
-  if (jcr->impl->res.write_storage_list.empty()) {
+  if (!jcr->impl->res.write_storage_list) {
     Jmsg(jcr, M_FATAL, 0,
          _("No Storage specification found in Job or Pool.\n"));
     return false;

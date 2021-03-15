@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,7 +34,6 @@
  * the DB.
  */
 
-#include "dird_conf.h"
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
@@ -241,7 +240,6 @@ bool DoVerify(JobControlRecord* jcr)
   Jmsg(jcr, M_INFO, 0, _("Start Verify JobId=%s Level=%s Job=%s\n"),
        edit_uint64(jcr->JobId, ed1), JobLevelToString(JobLevel), jcr->Job);
 
-  std::list<directordaemon::StorageResource*> empty_storage_list;
   switch (JobLevel) {
     case L_VERIFY_VOLUME_TO_CATALOG:
       /*
@@ -256,8 +254,7 @@ bool DoVerify(JobControlRecord* jcr)
       /*
        * Now start a job with the Storage daemon
        */
-      if (!StartStorageDaemonJob(jcr, jcr->impl->res.read_storage_list,
-                                 empty_storage_list,
+      if (!StartStorageDaemonJob(jcr, jcr->impl->res.read_storage_list, NULL,
                                  /* send_bsr */ true)) {
         return false;
       }

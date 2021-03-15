@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -490,7 +490,7 @@ class JobResource : public BareosResource {
   ClientResource* client = nullptr;     /**< Who to backup */
   FilesetResource* fileset = nullptr;   /**< What to backup -- Fileset */
   CatalogResource* catalog = nullptr;   /**< Which Catalog to use */
-  std::list<directordaemon::StorageResource*> storage{}; /**< Where is device -- list of Storage to be used */
+  alist* storage = nullptr; /**< Where is device -- list of Storage to be used */
   PoolResource* pool = nullptr;       /**< Where is media -- Media Pool */
   PoolResource* full_pool = nullptr;  /**< Pool for Full backups */
   PoolResource* vfull_pool = nullptr; /**< Pool for Virtual Full backups */
@@ -659,9 +659,8 @@ class PoolResource : public BareosResource {
   uint64_t MigrationHighBytes = 0;  /* When migration starts */
   uint64_t MigrationLowBytes = 0;   /* When migration stops */
   PoolResource* NextPool = nullptr; /* Next pool for migration */
-  std::list<directordaemon::StorageResource*>
-      storage{}; /**< Where is device -- list of Storage to be used */
-  bool use_catalog = false;            /* Maintain catalog for media */
+  alist* storage = nullptr; /* Where is device -- list of Storage to be used */
+  bool use_catalog = false; /* Maintain catalog for media */
   bool catalog_files = false;          /* Maintain file entries in catalog */
   bool use_volume_once = false;        /* Write on volume only once */
   bool purge_oldest_volume = false;    /* Purge oldest volume */

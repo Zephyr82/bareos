@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1322,7 +1322,7 @@ bool JobResource::Validate()
         return false;
       }
 
-      if (storage.empty() && (!pool || pool->storage.empty())) {
+      if (!storage && (!pool || !pool->storage)) {
         Jmsg(NULL, M_ERROR, 0,
              _("No storage specified in Job \"%s\" nor in Pool.\n"),
              resource_name_);
@@ -4069,6 +4069,7 @@ static void FreeResource(BareosResource* res, int type)
       if (p->pool_type) { free(p->pool_type); }
       if (p->label_format) { free(p->label_format); }
       if (p->cleaning_prefix) { free(p->cleaning_prefix); }
+      if (p->storage) { delete p->storage; }
       delete p;
       break;
     }
@@ -4102,6 +4103,7 @@ static void FreeResource(BareosResource* res, int type)
       if (p->WriteVerifyList) { free(p->WriteVerifyList); }
       if (p->selection_pattern) { free(p->selection_pattern); }
       if (p->run_cmds) { delete p->run_cmds; }
+      if (p->storage) { delete p->storage; }
       if (p->FdPluginOptions) { delete p->FdPluginOptions; }
       if (p->SdPluginOptions) { delete p->SdPluginOptions; }
       if (p->DirPluginOptions) { delete p->DirPluginOptions; }

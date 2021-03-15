@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -238,8 +238,8 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
 
   if (JobCanceled(jcr)) { goto bail_out; }
 
-  if (jcr->JobReads() && jcr->impl->res.read_storage_list.empty()) {
-    if (!jcr->impl->res.job->storage.empty()) {
+  if (jcr->JobReads() && !jcr->impl->res.read_storage_list) {
+    if (jcr->impl->res.job->storage) {
       CopyRwstorage(jcr, jcr->impl->res.job->storage, _("Job resource"));
     } else {
       CopyRwstorage(jcr, jcr->impl->res.job->pool->storage, _("Pool resource"));
@@ -1675,8 +1675,8 @@ void GetJobStorage(UnifiedStorageResource* store,
                    JobResource* job,
                    RunResource* run)
 {
-  if (run && run->pool && !run->pool->storage.empty()) {
-    store->store = run->pool->storage.front();
+  if (run && run->pool && run->pool->storage) {
+    store->store = (StorageResource*)run->pool->storage->first();
     PmStrcpy(store->store_source, _("Run pool override"));
     return;
   }
@@ -1685,12 +1685,12 @@ void GetJobStorage(UnifiedStorageResource* store,
     PmStrcpy(store->store_source, _("Run storage override"));
     return;
   }
-  if (!job->pool->storage.empty()) {
-    store->store = job->pool->storage.front();
+  if (job->pool->storage) {
+    store->store = (StorageResource*)job->pool->storage->first();
     PmStrcpy(store->store_source, _("Pool resource"));
   } else {
-    if (!job->storage.empty()) {
-      store->store = job->storage.front();
+    if (job->storage) {
+      store->store = (StorageResource*)job->storage->first();
       PmStrcpy(store->store_source, _("Job resource"));
     }
   }
@@ -1748,7 +1748,7 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
   /*
    * Copy storage definitions -- deleted in dir_free_jcr above
    */
-  if (!job->storage.empty()) {
+  if (job->storage) {
     CopyRwstorage(jcr, job->storage, _("Job resource"));
   } else if (job->pool) {
     CopyRwstorage(jcr, job->pool->storage, _("Pool resource"));
