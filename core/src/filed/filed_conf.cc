@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -399,20 +399,14 @@ static void FreeResource(BareosResource* res, int type)
       if (p->pki_keypair_file) { free(p->pki_keypair_file); }
       if (p->pki_keypair) { CryptoKeypairFree(p->pki_keypair); }
       if (p->pki_signing_key_files) { delete p->pki_signing_key_files; }
-      if (p->pki_signers) {
-        X509_KEYPAIR* keypair = nullptr;
-        foreach_alist (keypair, p->pki_signers) {
-          CryptoKeypairFree(keypair);
-        }
-        delete p->pki_signers;
+      if (!p->pki_signers.empty()) {
+        for (auto keypair : p->pki_signers) { CryptoKeypairFree(keypair); }
+        p->pki_signers.clear();
       }
       if (p->pki_master_key_files) { delete p->pki_master_key_files; }
-      if (p->pki_recipients) {
-        X509_KEYPAIR* keypair = nullptr;
-        foreach_alist (keypair, p->pki_recipients) {
-          CryptoKeypairFree(keypair);
-        }
-        delete p->pki_recipients;
+      if (!p->pki_recipients.empty()) {
+        for (auto keypair : p->pki_recipients) { CryptoKeypairFree(keypair); }
+        p->pki_recipients.clear();
       }
       if (p->verid) { free(p->verid); }
       if (p->allowed_script_dirs) { delete p->allowed_script_dirs; }

@@ -29,6 +29,8 @@
 #define SD_APPEND 1
 #define SD_READ 0
 
+class alist;
+
 namespace storagedaemon {
 
 struct VolumeList;

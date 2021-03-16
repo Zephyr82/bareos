@@ -1019,7 +1019,7 @@ void CryptoSignFree(SIGNATURE* sig)
  *  Note! BAREOS malloc() fails if out of memory.
  */
 CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
-                                   std::vector<X509_KEYPAIR*> pubkeys)
+                                   std::vector<X509_KEYPAIR*>& pubkeys)
 {
   CRYPTO_SESSION* cs;
   const EVP_CIPHER* ec;
@@ -1254,7 +1254,7 @@ bool CryptoSessionEncode(CRYPTO_SESSION* cs, uint8_t* dest, uint32_t* length)
  */
 crypto_error_t CryptoSessionDecode(const uint8_t* data,
                                    uint32_t length,
-                                   std::vector<X509_KEYPAIR*> keypairs,
+                                   std::vector<X509_KEYPAIR*>& keypairs,
                                    CRYPTO_SESSION** session)
 {
   CRYPTO_SESSION* cs;

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -433,9 +433,8 @@ static bool CheckResources()
       /*
        * Trusted Signers. We're always trusted.
        */
-      me->pki_signers = new alist(10, not_owned_by_alist);
       if (me->pki_keypair) {
-        me->pki_signers->append(crypto_keypair_dup(me->pki_keypair));
+        me->pki_signers.push_back(crypto_keypair_dup(me->pki_keypair));
       }
 
       /* If additional signing public keys have been specified, load them up */
@@ -449,7 +448,7 @@ static bool CheckResources()
             OK = false;
           } else {
             if (CryptoKeypairLoadCert(keypair, filepath)) {
-              me->pki_signers->append(keypair);
+              me->pki_signers.push_back(keypair);
 
               /* Attempt to load a private key, if available */
               if (CryptoKeypairHasKey(filepath)) {
@@ -477,9 +476,8 @@ static bool CheckResources()
        * Crypto recipients. We're always included as a recipient.
        * The symmetric session key will be encrypted for each of these readers.
        */
-      me->pki_recipients = new alist(10, not_owned_by_alist);
       if (me->pki_keypair) {
-        me->pki_recipients->append(crypto_keypair_dup(me->pki_keypair));
+        me->pki_recipients.push_back(crypto_keypair_dup(me->pki_keypair));
       }
 
 
@@ -494,7 +492,7 @@ static bool CheckResources()
             OK = false;
           } else {
             if (CryptoKeypairLoadCert(keypair, filepath)) {
-              me->pki_recipients->append(keypair);
+              me->pki_recipients.push_back(keypair);
             } else {
               Emsg3(M_FATAL, 0,
                     _("Failed to load master key certificate"

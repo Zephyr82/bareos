@@ -120,8 +120,9 @@ class ClientResource
   uint32_t lmdb_threshold = 0;  /* Switch to using LDMD when number of accurate
                                entries exceeds treshold. */
   X509_KEYPAIR* pki_keypair = nullptr; /* Shared PKI Public/Private Keypair */
-  alist* pki_signers = nullptr;        /* Shared PKI Trusted Signers */
-  alist* pki_recipients = nullptr;     /* Shared PKI Recipients */
+
+  std::vector<X509_KEYPAIR*> pki_signers{};    /* Shared PKI Trusted Signers */
+  std::vector<X509_KEYPAIR*> pki_recipients{}; /* Shared PKI Recipients */
   alist* allowed_script_dirs
       = nullptr; /* Only allow to run scripts in this directories */
   alist* allowed_job_cmds = nullptr; /* Only allow the following Job commands to
