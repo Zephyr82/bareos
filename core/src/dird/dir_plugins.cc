@@ -198,7 +198,6 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
                         void* value,
                         bool reverse)
 {
-  int i;
   bDirEvent event;
   std::vector<PluginContext*> plugin_ctx_list;
   bRC rc = bRC_OK;
@@ -231,13 +230,16 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
    * See if we need to trigger the loaded plugins in reverse order.
    */
   if (reverse) {
-    for (auto ctx : plugin_ctx_list) {
-      if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
+    int i{};
+    for (auto ctx = plugin_ctx_list.rbegin(); ctx != plugin_ctx_list.rend();
+         ++ctx) {
+      if (trigger_plugin_event(jcr, eventType, &event, *ctx, value,
                                plugin_ctx_list, &i, &rc)) {
         break;
       }
     }
   } else {
+    int i{};
     for (auto ctx : plugin_ctx_list) {
       if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
                                plugin_ctx_list, &i, &rc)) {
@@ -481,12 +483,11 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
           for (auto plugin : dird_plugin_list) {
             if ((*plugin).file_len == len
                 && bstrncasecmp((*plugin).file, plugin_name, len)) {
-              ctx = instantiate_plugin(jcr, (plugin), instance);
+              ctx = instantiate_plugin(jcr, plugin, instance);
               break;
             }
           }
         }
-
         if (ctx) {
           std::vector<PluginContext*> empty_plugin_ctx_list;
           trigger_plugin_event(jcr, eventType, &event, ctx,

@@ -521,19 +521,19 @@ static inline PluginContext* instantiate_plugin(JobControlRecord* jcr,
 void DispatchNewPluginOptions(JobControlRecord* jcr)
 {
   int i, len;
+  PluginContext* ctx = nullptr;
   uint32_t instance;
-  /* bSdEvent event; */
-  /* bSdEventType eventType; */
+  bSdEvent event;
+  bSdEventType eventType;
   char *bp, *plugin_name, *option;
   const char* plugin_options;
   PoolMem priv_plugin_options(PM_MESSAGE);
-  /* PluginContext ctx; */
 
-  if (sd_plugin_list.empty() || sd_plugin_list.empty()) { return; }
+  if (sd_plugin_list.empty()) { return; }
 
   if (jcr->impl->plugin_options && jcr->impl->plugin_options->size()) {
-    /* eventType = bSdEventNewPluginOptions; */
-    /* event.eventType = eventType; */
+    eventType = bSdEventNewPluginOptions;
+    event.eventType = eventType;
 
     foreach_alist_index (i, plugin_options, jcr->impl->plugin_options) {
       /*
@@ -582,13 +582,10 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
        * See if this plugin options are for an already instantiated plugin
        * instance.
        */
-      /* bool instance_found = false; */
       if (!jcr->plugin_ctx_list.empty()) {
-        for (auto ctxi = jcr->plugin_ctx_list.begin();
-             ctxi != jcr->plugin_ctx_list.end(); ctxi++) {
-          if ((*ctxi)->instance == instance && (*ctxi)->plugin->file_len == len
-              && bstrncasecmp((*ctxi)->plugin->file, plugin_name, len)) {
-            /* instance_found = true; */
+        for (auto ctx : jcr->plugin_ctx_list) {
+          if ((*ctx).instance == instance && (*ctx).plugin->file_len == len
+              && bstrncasecmp((*ctx).plugin->file, plugin_name, len)) {
             break;
           }
         }
@@ -596,23 +593,21 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
         /*
          * Found a context in the previous loop ?
          */
-        /*
-        if (!instance_found) {
+        if (!ctx) {
           for (auto plugin : sd_plugin_list) {
-            if (plugin->file_len == len
-                && bstrncasecmp(plugin->file, plugin_name, len)) {
+            if ((*plugin).file_len == len
+                && bstrncasecmp((*plugin).file, plugin_name, len)) {
               ctx = instantiate_plugin(jcr, plugin, instance);
               break;
             }
           }
         }
-        std::vector<PluginContext*> empty_plugin_ctx_list;
         if (ctx) {
+          std::vector<PluginContext*> empty_plugin_ctx_list;
           trigger_plugin_event(jcr, eventType, &event, ctx,
                                (void*)plugin_options, empty_plugin_ctx_list,
                                NULL, NULL);
         }
-        */
       }
     }
   }
@@ -623,7 +618,6 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
  */
 void NewPlugins(JobControlRecord* jcr)
 {
-  /* int i; */
   int num;
 
   Dmsg0(debuglevel, "=== enter NewPlugins ===\n");
@@ -653,8 +647,6 @@ void NewPlugins(JobControlRecord* jcr)
  */
 void FreePlugins(JobControlRecord* jcr)
 {
-  /* PluginContext* ctx = nullptr; */
-
   if (sd_plugin_list.empty() || jcr->plugin_ctx_list.empty()) { return; }
 
   Dmsg2(debuglevel, "Free instance dir-plugin_ctx_list=%p JobId=%d\n",
