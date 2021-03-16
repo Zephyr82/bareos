@@ -154,7 +154,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
   /*
    * See if the backend is already loaded.
    */
-  if (loaded_backends.size() > 0) {
+  if (!loaded_backends.empty()) {
     for (auto& backend_shared_library : loaded_backends) {
       if (backend_shared_library->interface_type_id
           == backend_interface_mapping->interface_type_id) {
@@ -275,7 +275,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 
 void DbFlushBackends(void)
 {
-  if (loaded_backends.size() > 0) {
+  if (!loaded_backends.empty()) {
     for (auto backend_shared_library : loaded_backends) {
       /*
        * Call the flush entry point in the lib.
