@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,9 +38,6 @@
 
 #    include "jcr.h"
 #    include <assert.h>
-
-#    include "lib/alist.h"
-
 #    include <openssl/ssl.h>
 #    include <openssl/x509v3.h>
 #    include <openssl/asn1.h>
@@ -1021,10 +1018,10 @@ void CryptoSignFree(SIGNATURE* sig)
  *
  *  Note! BAREOS malloc() fails if out of memory.
  */
-CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher, alist* pubkeys)
+CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
+                                   std::vector<X509_KEYPAIR*> pubkeys)
 {
   CRYPTO_SESSION* cs;
-  X509_KEYPAIR* keypair = nullptr;
   const EVP_CIPHER* ec;
   unsigned char* iv;
   int iv_len;
@@ -1110,7 +1107,7 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher, alist* pubkeys)
       break;
 #        endif
 #      endif /* OPENSSL_NO_CAMELLIA */
-#    endif   /* HAVE_OPENSSL_EXPORT_LIBRARY */
+#    endif /* HAVE_OPENSSL_EXPORT_LIBRARY */
 #    if !defined(OPENSSL_NO_SHA) && !defined(OPENSSL_NO_SHA1)
 #      ifdef NID_aes_128_cbc_hmac_sha1
     case CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1:
@@ -1170,7 +1167,7 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher, alist* pubkeys)
    * Create RecipientInfo structures for supplied
    * public keys.
    */
-  foreach_alist (keypair, pubkeys) {
+  for (auto keypair : pubkeys) {
     RecipientInfo* ri;
     unsigned char* ekey;
     int ekey_len;
@@ -1257,11 +1254,10 @@ bool CryptoSessionEncode(CRYPTO_SESSION* cs, uint8_t* dest, uint32_t* length)
  */
 crypto_error_t CryptoSessionDecode(const uint8_t* data,
                                    uint32_t length,
-                                   alist* keypairs,
+                                   std::vector<X509_KEYPAIR*> keypairs,
                                    CRYPTO_SESSION** session)
 {
   CRYPTO_SESSION* cs;
-  X509_KEYPAIR* keypair = nullptr;
   STACK_OF(RecipientInfo) * recipients;
   crypto_error_t retval = CRYPTO_ERROR_NONE;
 #    if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
@@ -1271,7 +1267,7 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
 #    endif
 
   /* bareos-fd.conf doesn't contains any key */
-  if (!keypairs) { return CRYPTO_ERROR_NORECIPIENT; }
+  if (keypairs.empty()) { return CRYPTO_ERROR_NORECIPIENT; }
 
   cs = (CRYPTO_SESSION*)malloc(sizeof(CRYPTO_SESSION));
 
@@ -1294,7 +1290,7 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
    * Find a matching RecipientInfo structure for a supplied
    * public key
    */
-  foreach_alist (keypair, keypairs) {
+  for (auto keypair : keypairs) {
     RecipientInfo* ri;
     int i;
 
