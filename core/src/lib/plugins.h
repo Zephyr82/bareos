@@ -35,6 +35,7 @@
  *                Common definitions for all plugins                        *
  *                                                                          *
  ****************************************************************************/
+#include <vector>
 
 /**
  * Universal return codes from all plugin functions

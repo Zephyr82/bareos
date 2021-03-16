@@ -402,8 +402,7 @@ static inline PluginContext* instantiate_plugin(JobControlRecord* jcr,
  */
 void DispatchNewPluginOptions(JobControlRecord* jcr)
 {
-  int i, j, len;
-  Plugin* plugin;
+  int i, len;
   PluginContext* ctx = nullptr;
   uint32_t instance;
   bDirEvent event;
@@ -468,9 +467,9 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
        * instance.
        */
       if (!jcr->plugin_ctx_list.empty()) {
-        foreach_alist (ctx, jcr->plugin_ctx_list) {
-          if (ctx->instance == instance && ctx->plugin->file_len == len
-              && bstrncasecmp(ctx->plugin->file, plugin_name, len)) {
+        for (auto ctx : jcr->plugin_ctx_list) {
+          if ((*ctx).instance == instance && (*ctx).plugin->file_len == len
+              && bstrncasecmp((*ctx).plugin->file, plugin_name, len)) {
             break;
           }
         }
@@ -479,18 +478,20 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
          * Found a context in the previous loop ?
          */
         if (!ctx) {
-          foreach_alist_index (j, plugin, dird_plugin_list) {
-            if (plugin->file_len == len
-                && bstrncasecmp(plugin->file, plugin_name, len)) {
-              ctx = instantiate_plugin(jcr, plugin, instance);
+          for (auto plugin : dird_plugin_list) {
+            if ((*plugin).file_len == len
+                && bstrncasecmp((*plugin).file, plugin_name, len)) {
+              ctx = instantiate_plugin(jcr, (plugin), instance);
               break;
             }
           }
         }
 
         if (ctx) {
+          std::vector<PluginContext*> empty_plugin_ctx_list;
           trigger_plugin_event(jcr, eventType, &event, ctx,
-                               (void*)plugin_options, NULL, NULL, NULL);
+                               (void*)plugin_options, empty_plugin_ctx_list,
+                               NULL, NULL);
         }
       }
     }
@@ -502,22 +503,21 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
  */
 void NewPlugins(JobControlRecord* jcr)
 {
-  int i, num;
-  Plugin* plugin;
+  int num;
 
   Dmsg0(debuglevel, "=== enter NewPlugins ===\n");
-  if (!dird_plugin_list) {
+  if (dird_plugin_list.empty()) {
     Dmsg0(debuglevel, "No dir plugin list!\n");
     return;
   }
   if (jcr->IsJobCanceled()) { return; }
 
-  num = dird_plugin_list->size();
+  num = dird_plugin_list.size();
   Dmsg1(debuglevel, "dir-plugin-list size=%d\n", num);
   if (num == 0) { return; }
 
-  jcr->plugin_ctx_list = new alist(10, owned_by_alist);
-  foreach_alist_index (i, plugin, dird_plugin_list) {
+  jcr->plugin_ctx_list.clear();
+  for (auto plugin : dird_plugin_list) {
     /*
      * Start a new instance of each plugin
      */
@@ -530,13 +530,11 @@ void NewPlugins(JobControlRecord* jcr)
  */
 void FreePlugins(JobControlRecord* jcr)
 {
-  PluginContext* ctx = nullptr;
-
-  if (!dird_plugin_list || !jcr->plugin_ctx_list) { return; }
+  if (dird_plugin_list.empty() || jcr->plugin_ctx_list.empty()) { return; }
 
   Dmsg2(debuglevel, "Free instance dir-plugin_ctx_list=%p JobId=%d\n",
         jcr->plugin_ctx_list, jcr->JobId);
-  foreach_alist (ctx, jcr->plugin_ctx_list) {
+  for (auto ctx : jcr->plugin_ctx_list) {
     /*
      * Free the plugin instance
      */
@@ -544,8 +542,7 @@ void FreePlugins(JobControlRecord* jcr)
     free(ctx->core_private_context); /* Free BAREOS private context */
   }
 
-  delete jcr->plugin_ctx_list;
-  jcr->plugin_ctx_list = NULL;
+  jcr->plugin_ctx_list.clear();
 }
 
 /**
@@ -809,7 +806,6 @@ static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
 {
   int cnt;
   JobControlRecord *jcr, *njcr;
-  PluginContext* nctx;
   b_plugin_ctx* bctx;
   bRC retval = bRC_Error;
 
@@ -819,8 +815,8 @@ static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
 
   cnt = 0;
   foreach_jcr (njcr) {
-    if (jcr->plugin_ctx_list) {
-      foreach_alist (nctx, jcr->plugin_ctx_list) {
+    if (!jcr->plugin_ctx_list.empty()) {
+      for (auto nctx : jcr->plugin_ctx_list) {
         if (nctx->plugin == bctx->plugin) { cnt++; }
       }
     }
