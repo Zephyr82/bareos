@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,7 +30,6 @@
 #include "breg.h"
 #include "mem_pool.h"
 #include "lib/parse_conf.h"
-#include "lib/alist.h"
 
 BareosRegex* NewBregexp(const char* motif)
 {
@@ -63,25 +62,23 @@ void FreeBregexp(BareosRegex* self)
 
 /* Free a bregexps alist
  */
-void FreeBregexps(alist* bregexps)
+void FreeBregexps(std::vector<BareosRegex*> bregexps)
 {
   Dmsg0(500, "bregexp: freeing all BareosRegex object\n");
 
-  BareosRegex* elt = nullptr;
-  foreach_alist (elt, bregexps) {
-    FreeBregexp(elt);
-  }
+  for (auto elt : bregexps) { FreeBregexp(elt); }
 }
 
 /* Apply all regexps to fname
  */
-bool ApplyBregexps(const char* fname, alist* bregexps, char** result)
+bool ApplyBregexps(const char* fname,
+                   std::vector<BareosRegex*> bregexps,
+                   char** result)
 {
-  BareosRegex* elt = nullptr;
   bool ok = false;
 
   char* ret = (char*)fname;
-  foreach_alist (elt, bregexps) {
+  for (auto elt : bregexps) {
     ret = elt->replace(ret);
     ok = ok || elt->success;
   }
@@ -91,29 +88,22 @@ bool ApplyBregexps(const char* fname, alist* bregexps, char** result)
   return ok;
 }
 
-/* return an alist of BareosRegex or return NULL if it's not a
+/* return an vector of BareosRegex or empty if it's not a
  * where=!tmp!opt!ig,!temp!opt!i
  */
-alist* get_bregexps(const char* where)
+std::vector<BareosRegex*> get_bregexps(const char* where)
 {
   char* p = (char*)where;
-  alist* list = new alist(10, not_owned_by_alist);
-  BareosRegex* reg;
+  std::vector<BareosRegex*> list;
 
-  reg = NewBregexp(p);
+  BareosRegex* reg = NewBregexp(p);
 
   while (reg) {
     p = reg->eor;
-    list->append(reg);
+    list.push_back(reg);
     reg = NewBregexp(p);
   }
-
-  if (list->size()) {
-    return list;
-  } else {
-    delete list;
-    return NULL;
-  }
+  return list;
 }
 
 bool BareosRegex::ExtractRegexp(const char* motif)

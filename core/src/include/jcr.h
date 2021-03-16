@@ -41,6 +41,7 @@
 #include "include/job_types.h"
 #include "lib/alist.h"
 #include "lib/tls_conf.h"
+#include "lib/breg.h"
 
 class BareosDb;
 class BareosSocket;
@@ -185,7 +186,7 @@ class JobControlRecord {
   uint32_t ClientId{};          /**< Client associated with Job */
   char* where{};                /**< Prefix to restore files to */
   char* RegexWhere{};           /**< File relocation in restore */
-  alist* where_bregexp{};       /**< BareosRegex alist for path manipulation */
+  std::vector<BareosRegex*>  where_bregexp{};       /**< BareosRegex vector for path manipulation */
   int32_t cached_pnl{};         /**< Cached path length */
   POOLMEM* cached_path{};   /**< Cached path */
   bool passive_client{};    /**< Client is a passive client e.g. doesn't initiate any network connection */

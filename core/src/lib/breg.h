@@ -81,22 +81,23 @@ class BareosRegex {
 /* create new BareosRegex and compile regex_t */
 BareosRegex* NewBregexp(const char* motif);
 
-class alist;
 
 /* launch each bregexp on filename */
-int RunBregexp(alist* bregexps, const char* fname);
+int RunBregexp(std::vector<BareosRegex*> bregexps, const char* fname);
 
 /* free BareosRegex (and all POOLMEM) */
 void FreeBregexp(BareosRegex* script);
 
-/* fill an alist with BareosRegex from where */
-alist* get_bregexps(const char* where);
+/* fill an vector with BareosRegex from where */
+std::vector<BareosRegex*> get_bregexps(const char* where);
 
-/* apply every regexps from the alist */
-bool ApplyBregexps(const char* fname, alist* bregexps, char** result);
+/* apply every regexps from the vector  */
+bool ApplyBregexps(const char* fname,
+                   std::vector<BareosRegex*> bregexps,
+                   char** result);
 
-/* foreach_alist free RunScript */
-void FreeBregexps(alist* bregexps); /* you have to free alist */
+/* free vector */
+void FreeBregexps(std::vector<BareosRegex*> bregexps);
 
 /* get regexp size */
 int BregexpGetBuildWhereSize(char* strip_prefix,

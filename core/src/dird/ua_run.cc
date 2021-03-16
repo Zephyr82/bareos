@@ -2,7 +2,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1039,7 +1039,7 @@ static bool ResetRestoreContext(UaContext* ua,
 
 static void SelectWhereRegexp(UaContext* ua, JobControlRecord* jcr)
 {
-  alist* regs;
+  std::vector<BareosRegex*> regs;
   char *strip_prefix, *add_prefix, *add_suffix, *rwhere;
   strip_prefix = add_suffix = rwhere = add_prefix = NULL;
 
@@ -1110,7 +1110,7 @@ try_again_reg:
         free(regexp);
       }
 
-      if (!regs) {
+      if (regs.empty()) {
         ua->SendMsg(_("Cannot use your regexp\n"));
         goto try_again_reg;
       }
@@ -1120,7 +1120,7 @@ try_again_reg:
         ua->SendMsg(_("%s -> %s\n"), ua->cmd, result);
       }
       FreeBregexps(regs);
-      delete regs;
+      regs.clear();
       goto try_again_reg;
     case 5:
       /* OK */
@@ -1153,9 +1153,9 @@ try_again_reg:
   }
 
   regs = get_bregexps(jcr->RegexWhere);
-  if (regs) {
+  if (!regs.empty()) {
     FreeBregexps(regs);
-    delete regs;
+    regs.clear();
   } else {
     if (jcr->RegexWhere) {
       free(jcr->RegexWhere);

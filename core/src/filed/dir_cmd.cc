@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -2432,7 +2432,7 @@ static bool RestoreCmd(JobControlRecord* jcr)
 
   if (use_regexwhere) {
     jcr->where_bregexp = get_bregexps(args);
-    if (!jcr->where_bregexp) {
+    if (!jcr->where_bregexp.size()) {
       Jmsg(jcr, M_FATAL, 0, _("Bad where regexp. where=%s\n"), args);
       FreePoolMemory(args);
       return false;

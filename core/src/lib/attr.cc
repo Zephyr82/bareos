@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -175,7 +175,7 @@ void BuildAttrOutputFnames(JobControlRecord* jcr, Attributes* attr)
    *
    */
 
-  if (jcr->where_bregexp) {
+  if (!jcr->where_bregexp.empty()) {
     char* ret;
     ApplyBregexps(attr->fname, jcr->where_bregexp, &ret);
     PmStrcpy(attr->ofname, ret);
