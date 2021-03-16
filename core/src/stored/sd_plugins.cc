@@ -313,7 +313,6 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
                         void* value,
                         bool reverse)
 {
-  int i;
   bSdEvent event;
   std::vector<PluginContext*> plugin_ctx_list;
   bRC rc = bRC_OK;
@@ -332,7 +331,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
    * Return if no plugins loaded
    */
   if (jcr->plugin_ctx_list.empty()) {
-    Dmsg0(debuglevel, "No plugin_ctx_list: GeneratePluginEvent ignored.\n");
+    Dmsg0(debuglevel, "plugin_ctx_list empty: GeneratePluginEvent ignored.\n");
     goto bail_out;
   }
 
@@ -346,13 +345,16 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
    * See if we need to trigger the loaded plugins in reverse order.
    */
   if (reverse) {
-    for (auto ctx : plugin_ctx_list) {
-      if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
+    int i{};
+    for (auto ctx = plugin_ctx_list.rbegin(); ctx != plugin_ctx_list.rend();
+         ++ctx) {
+      if (trigger_plugin_event(jcr, eventType, &event, *ctx, value,
                                plugin_ctx_list, &i, &rc)) {
         break;
       }
     }
   } else {
+    int i{};
     for (auto ctx : plugin_ctx_list) {
       if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
                                plugin_ctx_list, &i, &rc)) {
@@ -402,7 +404,9 @@ void LoadSdPlugins(const char* plugin_dir, alist* plugin_names)
     Dmsg0(debuglevel, "No sd plugin dir!\n");
     return;
   }
+
   sd_plugin_list.clear();
+
   if (!LoadPlugins((void*)&bareos_plugin_interface_version,
                    (void*)&bareos_core_functions, sd_plugin_list, plugin_dir,
                    plugin_names, plugin_type, IsPluginCompatible)) {
@@ -839,6 +843,7 @@ static bRC bareosRegisterEvents(PluginContext* ctx, int nr_events, ...)
 
   if (!ctx) { return bRC_Error; }
   b_ctx = (b_plugin_ctx*)ctx->core_private_context;
+
   va_start(args, nr_events);
   for (i = 0; i < nr_events; i++) {
     event = va_arg(args, uint32_t);
@@ -872,7 +877,6 @@ static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
 {
   int cnt;
   JobControlRecord *jcr, *njcr;
-  /* PluginContext* nctx; */
   b_plugin_ctx* bctx;
   bRC retval = bRC_Error;
 

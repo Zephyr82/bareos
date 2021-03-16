@@ -464,7 +464,6 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
   } else {
     int i{};
     for (auto ctx : plugin_ctx_list) {
-      // foreach_alist_index (i, ctx, plugin_ctx_list) {
       if (!IsEventForThisPlugin(ctx->plugin, name, len)) {
         Dmsg2(debuglevel, "Not for this plugin name=%s NULL=%d\n", name,
               (name == NULL) ? 1 : 0);
@@ -2259,7 +2258,7 @@ static bRC bareosRegisterEvents(PluginContext* ctx, int nr_events, ...)
 }
 
 /**
- * Get the number of instaces instantiated of a certain plugin.
+ * Get the number of instances instantiated of a certain plugin.
  */
 static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
 {
