@@ -197,7 +197,7 @@ static bool load_a_plugin(void* bareos_plugin_interface_version,
  */
 bool LoadPlugins(void* bareos_plugin_interface_version,
                  void* bareos_core_functions,
-                 std::vector<Plugin*> plugin_list,
+                 std::vector<Plugin*>& plugin_list,
                  const char* plugin_dir,
                  alist* plugin_names,
                  const char* type,

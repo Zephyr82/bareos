@@ -629,7 +629,7 @@ bRC PluginOptionHandleFile(JobControlRecord* jcr,
 
   plugin_ctx_list = jcr->plugin_ctx_list;
 
-  if (fd_plugin_list.empty() || !plugin_ctx_list.empty()) {
+  if (fd_plugin_list.empty() || plugin_ctx_list.empty()) {
     Jmsg1(jcr, M_FATAL, 0,
           "PluginOptionHandleFile: Command plugin \"%s\" requested, but is not "
           "loaded.\n",
