@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,7 +41,6 @@
 #  include "bdb_mysql.h"
 #  include "lib/edit.h"
 #  include "lib/berrno.h"
-#  include "lib/dlist.h"
 /* pull in the generated queries definitions */
 #  include "mysql_queries.inc"
 
@@ -55,7 +54,7 @@
 /**
  * List of open databases
  */
-static dlist* db_list = NULL;
+static std::unordered_set<BareosDbMysql*> db_list{};
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -128,8 +127,7 @@ BareosDbMysql::BareosDbMysql(JobControlRecord* jcr,
   /*
    * Put the db in the list.
    */
-  if (db_list == NULL) { db_list = new dlist(this, &this->link_); }
-  db_list->append(this);
+  db_list.insert(this);
 
   /* make the queries available using the queries variable from the parent class
    */
@@ -244,7 +242,7 @@ void BareosDbMysql::CloseDatabase(JobControlRecord* jcr)
         db_handle_);
   if (ref_count_ == 0) {
     if (connected_) { SqlFreeResult(); }
-    db_list->remove(this);
+    db_list.erase(this);
     if (connected_) {
       Dmsg1(100, "close db=%p\n", db_handle_);
       mysql_close(&instance_);
@@ -265,10 +263,7 @@ void BareosDbMysql::CloseDatabase(JobControlRecord* jcr)
     if (db_address_) { free(db_address_); }
     if (db_socket_) { free(db_socket_); }
     delete this;
-    if (db_list->size() == 0) {
-      delete db_list;
-      db_list = NULL;
-    }
+    if (!db_list.empty()) { db_list.clear(); }
   }
   V(mutex);
 }
@@ -725,8 +720,9 @@ BareosDb* db_init_database(JobControlRecord* jcr,
   /*
    * Look to see if DB already open
    */
-  if (db_list && !mult_db_connections && !need_private) {
-    foreach_dlist (mdb, db_list) {
+  if (!db_list.empty() && !mult_db_connections && !need_private) {
+    for (auto m : db_list) {
+      mdb = m;
       if (mdb->IsPrivate()) { continue; }
 
       if (mdb->MatchDatabase(db_driver, db_name, db_address, db_port)) {
