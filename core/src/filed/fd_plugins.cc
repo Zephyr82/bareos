@@ -438,7 +438,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
 
   event.eventType = eventType;
 
-  Dmsg2(debuglevel, "plugin_ctx=%p JobId=%d\n", plugin_ctx_list, jcr->JobId);
+  Dmsg2(debuglevel, "plugin_ctx=%p JobId=%d\n", &plugin_ctx_list, jcr->JobId);
 
   /*
    * Pass event to every plugin that has requested this event type (except if
@@ -501,7 +501,7 @@ bool PluginCheckFile(JobControlRecord* jcr, char* fname)
   }
 
   plugin_ctx_list = jcr->plugin_ctx_list;
-  Dmsg2(debuglevel, "plugin_ctx=%p JobId=%d\n", jcr->plugin_ctx_list,
+  Dmsg2(debuglevel, "plugin_ctx=%p JobId=%d\n", &jcr->plugin_ctx_list,
         jcr->JobId);
 
   /*
@@ -1877,7 +1877,7 @@ void NewPlugins(JobControlRecord* jcr)
   // jcr->plugin_ctx_list = new alist(10, owned_by_alist);
   jcr->plugin_ctx_list.clear();
   Dmsg2(debuglevel, "Instantiate plugin_ctx=%p JobId=%d\n",
-        jcr->plugin_ctx_list, jcr->JobId);
+        &jcr->plugin_ctx_list, jcr->JobId);
 
   for (auto plugin : fd_plugin_list) {
     /*
@@ -1895,7 +1895,7 @@ void FreePlugins(JobControlRecord* jcr)
   if (fd_plugin_list.empty() || jcr->plugin_ctx_list.empty()) { return; }
 
   Dmsg2(debuglevel, "Free instance fd-plugin_ctx_list=%p JobId=%d\n",
-        jcr->plugin_ctx_list, jcr->JobId);
+        &jcr->plugin_ctx_list, jcr->JobId);
   for (auto ctx : jcr->plugin_ctx_list) {
     /* * Free the plugin instance */
     PlugFunc(ctx->plugin)->freePlugin(ctx);

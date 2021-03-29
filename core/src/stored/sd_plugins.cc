@@ -338,7 +338,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
   plugin_ctx_list = jcr->plugin_ctx_list;
   event.eventType = eventType;
 
-  Dmsg2(debuglevel, "sd-plugin_ctx_list=%p JobId=%d\n", plugin_ctx_list,
+  Dmsg2(debuglevel, "sd-plugin_ctx_list=%p JobId=%d\n", &plugin_ctx_list,
         jcr->JobId);
 
   /*
@@ -499,7 +499,7 @@ static inline PluginContext* instantiate_plugin(JobControlRecord* jcr,
   b_ctx->plugin = plugin;
 
   Dmsg2(debuglevel, "Instantiate dir-plugin_ctx_list=%p JobId=%d\n",
-        jcr->plugin_ctx_list, jcr->JobId);
+        &jcr->plugin_ctx_list, jcr->JobId);
 
   ctx = (PluginContext*)malloc(sizeof(PluginContext));
   ctx->instance = instance;
@@ -650,7 +650,7 @@ void FreePlugins(JobControlRecord* jcr)
   if (sd_plugin_list.empty() || jcr->plugin_ctx_list.empty()) { return; }
 
   Dmsg2(debuglevel, "Free instance dir-plugin_ctx_list=%p JobId=%d\n",
-        jcr->plugin_ctx_list, jcr->JobId);
+        &jcr->plugin_ctx_list, jcr->JobId);
   for (auto ctx : jcr->plugin_ctx_list) {
     /*
      * Free the plugin instance
