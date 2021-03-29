@@ -28,13 +28,12 @@
 #include "plugins/include/common.h"
 #include "include/fileopts.h"
 #include "lib/alist.h"
-#include "lib/path_list.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
 
 #include <glusterfs/api/glfs.h>
 
-
+#include <unordered_set>
 /* avoid missing config.h problem on Debian 8 and Ubuntu 16:
    compat-errno.h includes not existing config.h when
    _CONFIG_H is not defined
@@ -149,7 +148,7 @@ struct plugin_ctx {
   POOLMEM* dirent_buffer; /* Temporary buffer for current dirent structure */
 #endif
   alist* dir_stack;       /* Stack of directories when recursing */
-  htable* path_list;      /* Hash table with directories created on restore. */
+  std::unordered_set<std::string> path_list{};      /* Hash table with directories created on restore. */
   glfs_t* glfs;           /* Gluster volume handle */
   glfs_fd_t* gdir;        /* Gluster directory handle */
   glfs_fd_t* gfd;         /* Gluster file handle */
@@ -393,9 +392,8 @@ static bRC freePlugin(PluginContext* ctx)
 
   if (p_ctx->file_list_handle) { fclose(p_ctx->file_list_handle); }
 
-  if (p_ctx->path_list) {
-    FreePathList(p_ctx->path_list);
-    p_ctx->path_list = NULL;
+  if (!p_ctx->path_list.empty()) {
+    p_ctx->path_list.clear();
   }
 
   if (p_ctx->dir_stack) {
@@ -1285,8 +1283,7 @@ static inline bool GfapiMakedirs(plugin_ctx* p_ctx, const char* directory)
            * Create the directory.
            */
           if (glfs_mkdir(p_ctx->glfs, directory, 0750) == 0) {
-            if (!p_ctx->path_list) { p_ctx->path_list = path_list_init(); }
-            PathListAdd(p_ctx->path_list, strlen(directory), directory);
+            p_ctx->path_list.insert(directory);
             retval = true;
           }
         }
@@ -1896,9 +1893,11 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
         /*
          * Set attributes if we created this directory
          */
-        if (rp->type == FT_DIREND
-            && PathListLookup(p_ctx->path_list, rp->ofname)) {
-          break;
+	{
+          auto it = p_ctx->path_list.find(rp->ofname);
+          if (rp->type == FT_DIREND && (it != p_ctx->path_list.end())) {
+            break;
+          }
         }
         Jmsg(ctx, M_INFO, 0, _("gfapi-fd: File skipped. Already exists: %s\n"),
              rp->ofname);

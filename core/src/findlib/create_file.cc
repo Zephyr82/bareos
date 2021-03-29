@@ -33,7 +33,6 @@
 #include "find.h"
 #include "findlib/makepath.h"
 #include "findlib/create_file.h"
-#include "lib/path_list.h"
 #include "lib/btimers.h"
 #include "lib/berrno.h"
 
@@ -146,10 +145,7 @@ int CreateFile(JobControlRecord* jcr,
          */
         {
           auto it = jcr->path_list.find(std::string(attr->ofname));
-          if (attr->type == FT_DIREND && (it != jcr->path_list.end()))
-            ;
-          // && PathListLookup(jcr->path_list, attr->ofname))
-          {
+          if (attr->type == FT_DIREND && (it != jcr->path_list.end())) {
             break;
           }
           Qmsg(jcr, M_INFO, 0, _("File skipped. Already exists: %s\n"),

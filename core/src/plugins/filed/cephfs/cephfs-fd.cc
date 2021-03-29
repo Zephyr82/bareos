@@ -29,10 +29,10 @@
 #include "include/fileopts.h"
 #include "lib/alist.h"
 #include "lib/berrno.h"
-#include "lib/path_list.h"
 
 #include <dirent.h>
 #include <cephfs/libcephfs.h>
+#include <unordered_set>
 
 namespace filedaemon {
 
@@ -126,7 +126,7 @@ struct plugin_ctx {
   POOLMEM* link_target;   /* Target symlink points to */
   POOLMEM* xattr_list;    /* List of xattrs */
   alist* dir_stack;       /* Stack of directories when recursing */
-  htable* path_list;      /* Hash table with directories created on restore. */
+  std::unordered_set<std::string> path_list{}; /* Hash table with directories created on restore. */
   struct dirent de;       /* Current directory entry being processed. */
   struct ceph_mount_info* cmount; /* CEPHFS mountpoint */
   struct ceph_dir_result* cdir;   /* CEPHFS directory handle */
@@ -268,9 +268,8 @@ static bRC freePlugin(PluginContext* ctx)
 
   Dmsg(ctx, debuglevel, "cephfs-fd: entering freePlugin\n");
 
-  if (p_ctx->path_list) {
-    FreePathList(p_ctx->path_list);
-    p_ctx->path_list = NULL;
+  if (!p_ctx->path_list.empty()) {
+    p_ctx->path_list.clear();
   }
 
   if (p_ctx->dir_stack) {
@@ -1252,8 +1251,7 @@ static inline bool CephfsMakedirs(plugin_ctx* p_ctx, const char* directory)
        * Create the directory.
        */
       if (ceph_mkdir(p_ctx->cmount, directory, 0750) == 0) {
-        if (!p_ctx->path_list) { p_ctx->path_list = path_list_init(); }
-        PathListAdd(p_ctx->path_list, strlen(directory), directory);
+        p_ctx->path_list.insert(directory);
         retval = true;
       }
     } else {
@@ -1278,8 +1276,7 @@ static inline bool CephfsMakedirs(plugin_ctx* p_ctx, const char* directory)
              * Create the directory.
              */
             if (ceph_mkdir(p_ctx->cmount, directory, 0750) == 0) {
-              if (!p_ctx->path_list) { p_ctx->path_list = path_list_init(); }
-              PathListAdd(p_ctx->path_list, strlen(directory), directory);
+              p_ctx->path_list.insert(directory);
               retval = true;
             }
             break;
@@ -1359,14 +1356,16 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
         /*
          * Set attributes if we created this directory
          */
-        if (rp->type == FT_DIREND
-            && PathListLookup(p_ctx->path_list, rp->ofname)) {
-          break;
-        }
+	{
+          auto it = p_ctx->path_list.find(rp->ofname);
+          if (rp->type == FT_DIREND && (it != p_ctx->path_list.end())) {
+            break;
+          }
         Jmsg(ctx, M_INFO, 0, _("cephfs-fd: File skipped. Already exists: %s\n"),
              rp->ofname);
         rp->create_status = CF_SKIP;
         goto bail_out;
+	}
       case REPLACE_ALWAYS:
         break;
     }

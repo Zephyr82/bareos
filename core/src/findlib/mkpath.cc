@@ -37,7 +37,6 @@
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/berrno.h"
-#include "lib/path_list.h"
 
 #define debuglevel 50
 
@@ -80,9 +79,6 @@ static bool makedir(JobControlRecord* jcr,
     /*
      * When replace = NEVER, we keep track of all directories newly created
      */
-    // if (!jcr->path_list) { jcr->path_list = path_list_init(); }
-
-    // PathListAdd(jcr->path_list, strlen(path), path);
     jcr->path_list.insert(path);
   }
 
