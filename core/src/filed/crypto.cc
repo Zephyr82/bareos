@@ -162,7 +162,6 @@ bool CryptoSessionSend(JobControlRecord* jcr, BareosSocket* sd)
  */
 bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
 {
-  X509_KEYPAIR* keypair = nullptr;
   DIGEST* digest = NULL;
   crypto_error_t err;
   uint64_t saved_bytes;
