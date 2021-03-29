@@ -74,7 +74,6 @@ set(BAREOS_SRCS
     output_formatter.cc
     output_formatter_resource.cc
     passphrase.cc
-    path_list.cc
     plugins.cc
     bpoll.cc
     priv.cc

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2015 Planets Communications B.V.
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -126,8 +126,9 @@ struct plugin_ctx {
   POOLMEM* link_target;   /* Target symlink points to */
   POOLMEM* xattr_list;    /* List of xattrs */
   alist* dir_stack;       /* Stack of directories when recursing */
-  std::unordered_set<std::string> path_list{}; /* Hash table with directories created on restore. */
-  struct dirent de;       /* Current directory entry being processed. */
+  std::unordered_set<std::string>
+      path_list{};  /* Hash table with directories created on restore. */
+  struct dirent de; /* Current directory entry being processed. */
   struct ceph_mount_info* cmount; /* CEPHFS mountpoint */
   struct ceph_dir_result* cdir;   /* CEPHFS directory handle */
   int cfd;                        /* CEPHFS file handle */
@@ -268,9 +269,7 @@ static bRC freePlugin(PluginContext* ctx)
 
   Dmsg(ctx, debuglevel, "cephfs-fd: entering freePlugin\n");
 
-  if (!p_ctx->path_list.empty()) {
-    p_ctx->path_list.clear();
-  }
+  if (!p_ctx->path_list.empty()) { p_ctx->path_list.clear(); }
 
   if (p_ctx->dir_stack) {
     p_ctx->dir_stack->destroy();
@@ -1356,16 +1355,16 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
         /*
          * Set attributes if we created this directory
          */
-	{
+        {
           auto it = p_ctx->path_list.find(rp->ofname);
           if (rp->type == FT_DIREND && (it != p_ctx->path_list.end())) {
             break;
           }
-        Jmsg(ctx, M_INFO, 0, _("cephfs-fd: File skipped. Already exists: %s\n"),
-             rp->ofname);
-        rp->create_status = CF_SKIP;
-        goto bail_out;
-	}
+          Jmsg(ctx, M_INFO, 0,
+               _("cephfs-fd: File skipped. Already exists: %s\n"), rp->ofname);
+          rp->create_status = CF_SKIP;
+          goto bail_out;
+        }
       case REPLACE_ALWAYS:
         break;
     }

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -147,8 +147,9 @@ struct plugin_ctx {
 #ifndef HAVE_GLFS_READDIRPLUS
   POOLMEM* dirent_buffer; /* Temporary buffer for current dirent structure */
 #endif
-  alist* dir_stack;       /* Stack of directories when recursing */
-  std::unordered_set<std::string> path_list{};      /* Hash table with directories created on restore. */
+  alist* dir_stack; /* Stack of directories when recursing */
+  std::unordered_set<std::string>
+      path_list{};        /* Hash table with directories created on restore. */
   glfs_t* glfs;           /* Gluster volume handle */
   glfs_fd_t* gdir;        /* Gluster directory handle */
   glfs_fd_t* gfd;         /* Gluster file handle */
@@ -392,9 +393,7 @@ static bRC freePlugin(PluginContext* ctx)
 
   if (p_ctx->file_list_handle) { fclose(p_ctx->file_list_handle); }
 
-  if (!p_ctx->path_list.empty()) {
-    p_ctx->path_list.clear();
-  }
+  if (!p_ctx->path_list.empty()) { p_ctx->path_list.clear(); }
 
   if (p_ctx->dir_stack) {
     p_ctx->dir_stack->destroy();
@@ -1893,7 +1892,7 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
         /*
          * Set attributes if we created this directory
          */
-	{
+        {
           auto it = p_ctx->path_list.find(rp->ofname);
           if (rp->type == FT_DIREND && (it != p_ctx->path_list.end())) {
             break;
