@@ -144,7 +144,7 @@ int CreateFile(JobControlRecord* jcr,
          * Set attributes if we created this directory
          */
         {
-          auto it = jcr->path_list.find(std::string(attr->ofname));
+          auto it = jcr->path_list.find(attr->ofname);
           if (attr->type == FT_DIREND && (it != jcr->path_list.end())) {
             break;
           }
