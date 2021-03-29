@@ -2647,10 +2647,8 @@ static void FiledFreeJcr(JobControlRecord* jcr)
   delete jcr->impl->RunScripts;
   jcr->impl->RunScripts = nullptr;
 
-  if (jcr->path_list) {
-    FreePathList(jcr->path_list);
-    jcr->path_list = nullptr;
-  }
+  if (!jcr->path_list.empty()) { jcr->path_list.clear(); }
+
 
   TermFindFiles(jcr->impl->ff);
   jcr->impl->ff = nullptr;

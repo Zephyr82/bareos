@@ -42,6 +42,8 @@
 #include "lib/alist.h"
 #include "lib/tls_conf.h"
 #include "lib/breg.h"
+#include <unordered_set>
+
 
 class BareosDb;
 class BareosSocket;
@@ -225,7 +227,7 @@ class JobControlRecord {
   PluginContext* plugin_ctx{};  /**< Current plugin context */
   POOLMEM* comment{};       /**< Comment for this Job */
   int64_t max_bandwidth{};  /**< Bandwidth limit for this Job */
-  htable* path_list{};      /**< Directory list (used by findlib) */
+  std::unordered_set<std::string> path_list{};      /**< Directory list (used by findlib) */
   bool is_passive_client_connection_probing{}; /**< Set if director probes a passive client connection */
 
   JobControlRecordPrivate* impl{nullptr}; /* Pointer to implementation of each daemon */

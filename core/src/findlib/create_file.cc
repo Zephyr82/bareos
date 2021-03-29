@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -144,13 +144,18 @@ int CreateFile(JobControlRecord* jcr,
         /*
          * Set attributes if we created this directory
          */
-        if (attr->type == FT_DIREND
-            && PathListLookup(jcr->path_list, attr->ofname)) {
-          break;
+        {
+          auto it = jcr->path_list.find(std::string(attr->ofname));
+          if (attr->type == FT_DIREND && (it != jcr->path_list.end()))
+            ;
+          // && PathListLookup(jcr->path_list, attr->ofname))
+          {
+            break;
+          }
+          Qmsg(jcr, M_INFO, 0, _("File skipped. Already exists: %s\n"),
+               attr->ofname);
+          return CF_SKIP;
         }
-        Qmsg(jcr, M_INFO, 0, _("File skipped. Already exists: %s\n"),
-             attr->ofname);
-        return CF_SKIP;
       case REPLACE_ALWAYS:
         break;
     }

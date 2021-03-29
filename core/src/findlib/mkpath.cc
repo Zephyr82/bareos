@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -80,9 +80,10 @@ static bool makedir(JobControlRecord* jcr,
     /*
      * When replace = NEVER, we keep track of all directories newly created
      */
-    if (!jcr->path_list) { jcr->path_list = path_list_init(); }
+    // if (!jcr->path_list) { jcr->path_list = path_list_init(); }
 
-    PathListAdd(jcr->path_list, strlen(path), path);
+    // PathListAdd(jcr->path_list, strlen(path), path);
+    jcr->path_list.insert(path);
   }
 
   *created = true;
