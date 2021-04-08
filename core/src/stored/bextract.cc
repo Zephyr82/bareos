@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -81,7 +81,7 @@ static DirectorResource* director = NULL;
 
 static AclData acl_data;
 static XattrData xattr_data;
-static alist* delayed_streams = NULL;
+static std::list<DelayedDataStream> delayed_streams{};
 
 static char* wbuf;            /* write buffer address */
 static uint32_t wsize;        /* write size */
@@ -265,15 +265,8 @@ int main(int argc, char* argv[])
  */
 static inline void DropDelayedDataStreams()
 {
-  DelayedDataStream* dds = nullptr;
-
-  if (!delayed_streams || delayed_streams->empty()) { return; }
-
-  foreach_alist (dds, delayed_streams) {
-    free(dds->content);
-  }
-
-  delayed_streams->destroy();
+  if (delayed_streams.empty()) { return; }
+  delayed_streams.clear();
 }
 
 /*
@@ -283,17 +276,13 @@ static inline void PushDelayedDataStream(int stream,
                                          char* content,
                                          uint32_t content_length)
 {
-  DelayedDataStream* dds;
+  DelayedDataStream dds;
+  dds.stream = stream;
+  dds.content = (char*)malloc(content_length);
+  memcpy(dds.content, content, content_length);
+  dds.content_length = content_length;
 
-  if (!delayed_streams) { delayed_streams = new alist(10, owned_by_alist); }
-
-  dds = (DelayedDataStream*)malloc(sizeof(DelayedDataStream));
-  dds->stream = stream;
-  dds->content = (char*)malloc(content_length);
-  memcpy(dds->content, content, content_length);
-  dds->content_length = content_length;
-
-  delayed_streams->append(dds);
+  delayed_streams.push_back(dds);
 }
 
 /*
@@ -305,12 +294,10 @@ static inline void PushDelayedDataStream(int stream,
  */
 static inline void PopDelayedDataStreams()
 {
-  DelayedDataStream* dds = nullptr;
-
   /*
    * See if there is anything todo.
    */
-  if (!delayed_streams || delayed_streams->empty()) { return; }
+  if (delayed_streams.empty()) { return; }
 
   /*
    * Only process known delayed data streams here.
@@ -323,8 +310,8 @@ static inline void PopDelayedDataStreams()
    * - *_ACL_*
    * - *_XATTR_*
    */
-  foreach_alist (dds, delayed_streams) {
-    switch (dds->stream) {
+  for (auto dds : delayed_streams) {
+    switch (dds.stream) {
       case STREAM_UNIX_ACCESS_ACL:
       case STREAM_UNIX_DEFAULT_ACL:
       case STREAM_ACL_AIX_TEXT:
@@ -347,9 +334,9 @@ static inline void PopDelayedDataStreams()
       case STREAM_ACL_FREEBSD_NFS4_ACL:
       case STREAM_ACL_HURD_DEFAULT_ACL:
       case STREAM_ACL_HURD_ACCESS_ACL:
-        parse_acl_streams(jcr, &acl_data, dds->stream, dds->content,
-                          dds->content_length);
-        free(dds->content);
+        parse_acl_streams(jcr, &acl_data, dds.stream, dds.content,
+                          dds.content_length);
+        free(dds.content);
         break;
       case STREAM_XATTR_HURD:
       case STREAM_XATTR_IRIX:
@@ -361,28 +348,19 @@ static inline void PopDelayedDataStreams()
       case STREAM_XATTR_FREEBSD:
       case STREAM_XATTR_LINUX:
       case STREAM_XATTR_NETBSD:
-        ParseXattrStreams(jcr, &xattr_data, dds->stream, dds->content,
-                          dds->content_length);
-        free(dds->content);
+        ParseXattrStreams(jcr, &xattr_data, dds.stream, dds.content,
+                          dds.content_length);
+        free(dds.content);
         break;
       default:
         Jmsg(jcr, M_WARNING, 0,
              _("Unknown stream=%d ignored. This shouldn't happen!\n"),
-             dds->stream);
+             dds.stream);
         break;
     }
   }
 
-  /*
-   * We processed the stack so we can destroy it.
-   */
-  delayed_streams->destroy();
-
-  /*
-   * (Re)Initialize the stack for a new use.
-   */
-  delayed_streams->init(10, owned_by_alist);
-
+  delayed_streams.clear();
   return;
 }
 
@@ -446,12 +424,7 @@ static void DoExtract(char* devname)
 
   FreePoolMemory(acl_data.last_fname);
   FreePoolMemory(xattr_data.last_fname);
-
-  if (delayed_streams) {
-    DropDelayedDataStreams();
-    delete delayed_streams;
-  }
-
+  delayed_streams.clear();
   CleanupCompression(jcr);
 
   CleanDevice(jcr->impl->dcr);
