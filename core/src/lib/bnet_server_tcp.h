@@ -23,7 +23,7 @@
 
 #include <atomic>
 #include <functional>
-
+#include <list>
 class ConfigurationParser;
 class ThreadList;
 
@@ -39,10 +39,15 @@ enum class BnetServerState
 class alist;
 class dlist;
 
+struct s_sockfd {
+  int fd;
+  int port;
+};
+
 void BnetThreadServerTcp(
     dlist* addr_list,
     int max_clients,
-    alist* sockfds,
+    std::list<s_sockfd*> sockfds,
     ThreadList& thread_list,
     std::function<void*(ConfigurationParser* config, void* bsock)>
         HandleConnectionRequest,

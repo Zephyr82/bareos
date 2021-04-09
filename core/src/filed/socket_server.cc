@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -131,7 +131,7 @@ void StartSocketServer(dlist* addrs)
   /*
    * Permit MaxConnections connections.
    */
-  sock_fds = new alist(10, not_owned_by_alist);
+  std::list<s_sockfd*> sock_fds;
   BnetThreadServerTcp(addrs, me->MaxConnections, sock_fds, thread_list,
                       HandleConnectionRequest, my_config, nullptr,
                       UserAgentShutdownCallback);

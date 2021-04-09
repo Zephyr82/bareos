@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -64,11 +64,6 @@
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static std::atomic<bool> quit{false};
 
-struct s_sockfd {
-  int fd;
-  int port;
-};
-
 /**
  * Stop the Threaded Network Server if its realy running in a separate thread.
  * e.g. set the quit flag and wait for the other thread to exit cleanly.
@@ -88,18 +83,11 @@ void BnetStopAndWaitForThreadServerTcp(pthread_t tid)
  * Perform a cleanup for the Threaded Network Server check if there is still
  * something to do or that the cleanup already took place.
  */
-static void CleanupBnetThreadServerTcp(alist* sockfds, ThreadList& thread_list)
+static void CleanupBnetThreadServerTcp(std::list<s_sockfd*> sockfds,
+                                       ThreadList& thread_list)
 {
   Dmsg0(100, "CleanupBnetThreadServerTcp: start\n");
-
-  if (sockfds && !sockfds->empty()) {
-    s_sockfd* fd_ptr = (s_sockfd*)sockfds->first();
-    while (fd_ptr) {
-      close(fd_ptr->fd);
-      fd_ptr = (s_sockfd*)sockfds->next();
-    }
-    sockfds->destroy();
-  }
+  for (auto fd_ptr : sockfds) { close(fd_ptr->fd); }
 
   if (!thread_list.ShutdownAndWaitForThreadsToFinish()) {
     Emsg1(M_ERROR, 0, _("Could not destroy thread list.\n"));
@@ -109,7 +97,8 @@ static void CleanupBnetThreadServerTcp(alist* sockfds, ThreadList& thread_list)
 
 class BNetThreadServerCleanupObject {
  public:
-  BNetThreadServerCleanupObject(alist* sockfds, ThreadList& thread_list)
+  BNetThreadServerCleanupObject(std::list<s_sockfd*> sockfds,
+                                ThreadList& thread_list)
       : sockfds_(sockfds), thread_list_(thread_list)
   {
   }
@@ -120,7 +109,7 @@ class BNetThreadServerCleanupObject {
   }
 
  private:
-  alist* sockfds_;
+  std::list<s_sockfd*> sockfds_;
   ThreadList& thread_list_;
 };
 
@@ -227,7 +216,7 @@ static int OpenSocketAndBind(IPADDR* ipaddr,
 void BnetThreadServerTcp(
     dlist* addr_list,
     int max_clients,
-    alist* sockfds,
+    std::list<s_sockfd*> sockfds,
     ThreadList& thread_list,
     std::function<void*(ConfigurationParser* config, void* bsock)>
         HandleConnectionRequest,
@@ -265,7 +254,7 @@ void BnetThreadServerTcp(
     }
 
     listen(fd_ptr->fd, 50); /* tell system we are ready */
-    sockfds->append(fd_ptr);
+    sockfds.push_back(fd_ptr);
 
 #ifdef HAVE_POLL
     number_of_filedescriptors++;
@@ -291,10 +280,9 @@ void BnetThreadServerTcp(
   events |= POLLPRI;
 #  endif
 
-  s_sockfd* fd_ptr = nullptr;
   int i = 0;
 
-  foreach_alist (fd_ptr, sockfds) {
+  for (auto fd_ptr : sockfds) {
     pfds[i].fd = fd_ptr->fd;
     pfds[i].events = events;
     i++;
@@ -352,7 +340,7 @@ void BnetThreadServerTcp(
     }
 
     int cnt = 0;
-    foreach_alist (fd_ptr, sockfds) {
+    for (auto fd_ptr : sockfds) {
       if (pfds[cnt++].revents & events) {
 #endif
 
