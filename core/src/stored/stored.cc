@@ -304,7 +304,9 @@ int main(int argc, char* argv[])
                   GetFirstPortHostOrder(me->SDaddrs));
 
   SetJcrInThreadSpecificData(nullptr);
-  plugin_names = me->plugin_names->to_std_list_string();
+  if (me->plugin_names){
+ 	 plugin_names = me->plugin_names->to_std_list_string();
+  }
   LoadSdPlugins(me->plugin_directory,plugin_names);
 
   CleanUpOldFiles();

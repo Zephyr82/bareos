@@ -276,7 +276,9 @@ int main(int argc, char* argv[])
                 GetFirstPortHostOrder(me->FDaddrs));
   ReadStateFile(me->working_directory, "bareos-fd",
                 GetFirstPortHostOrder(me->FDaddrs));
+  if (me->plugin_names ){
   plugin_names = me->plugin_names->to_std_list_string();
+  }
   LoadFdPlugins(me->plugin_directory, plugin_names);
 
   InitJcrChain();
