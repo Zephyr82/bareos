@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -265,6 +265,17 @@ const char* IPADDR::build_address_str(char* buf,
   return buf;
 }
 
+
+// check if two addresses are the same
+bool IsSameIpAddress(IPADDR* first, IPADDR* second)
+{
+  return (first->GetSockaddrLen() == second->GetSockaddrLen()
+          && memcmp(first->get_sockaddr(), second->get_sockaddr(),
+                    first->GetSockaddrLen())
+                 == 0);
+}
+
+
 const char* BuildAddressesString(dlist* addrs,
                                  char* buf,
                                  int blen,
@@ -309,6 +320,7 @@ int GetFirstPortHostOrder(dlist* addrs)
     return ((IPADDR*)(addrs->first()))->GetPortHostOrder();
   }
 }
+
 
 int AddAddress(dlist** out,
                IPADDR::i_type type,
@@ -397,11 +409,7 @@ int AddAddress(dlist** out,
       IPADDR* clone;
       /* for duplicates */
       foreach_dlist (jaddr, addrs) {
-        if (iaddr->GetSockaddrLen() == jaddr->GetSockaddrLen()
-            && !memcmp(iaddr->get_sockaddr(), jaddr->get_sockaddr(),
-                       iaddr->GetSockaddrLen())) {
-          goto skip; /* no price */
-        }
+        if (IsSameIpAddress(iaddr, jaddr)) { goto skip; /* no price */ }
       }
       clone = new IPADDR(*iaddr);
       clone->SetType(type);

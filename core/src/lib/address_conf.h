@@ -105,6 +105,7 @@ int AddAddress(dlist** out,
                const char* port_str,
                char* buf,
                int buflen);
+bool IsSameIpAddress(IPADDR* first, IPADDR* second);
 const char* BuildAddressesString(dlist* addrs,
                                  char* buf,
                                  int blen,

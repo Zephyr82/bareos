@@ -50,7 +50,7 @@ static char hello_client[] = "Hello Client %127s calling";
 
 /* Global variables */
 static ThreadList thread_list;
-static std::list<s_sockfd*> stock_fds;
+static std::list<s_sockfd*> sock_fds;
 static pthread_t tcp_server_tid;
 static ConnectionPool* client_connections = NULL;
 

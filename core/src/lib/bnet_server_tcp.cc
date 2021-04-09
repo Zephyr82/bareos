@@ -37,6 +37,7 @@
 #include "lib/bsys.h"
 #include "lib/thread_list.h"
 #include "lib/watchdog.h"
+#include "lib/address_conf.h"
 
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -123,13 +124,7 @@ static void RemoveDuplicateAddresses(dlist* addr_list)
        ipaddr = (IPADDR*)addr_list->next(ipaddr)) {
     next = (IPADDR*)addr_list->next(ipaddr);
     while (next) {
-      /*
-       * See if the addresses match.
-       */
-      if (ipaddr->GetSockaddrLen() == next->GetSockaddrLen()
-          && memcmp(ipaddr->get_sockaddr(), next->get_sockaddr(),
-                    ipaddr->GetSockaddrLen())
-                 == 0) {
+      if (IsSameIpAddress(ipaddr, next)) {
         to_free = next;
         next = (IPADDR*)addr_list->next(next);
         addr_list->remove(to_free);
