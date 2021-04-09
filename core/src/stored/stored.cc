@@ -304,7 +304,7 @@ int main(int argc, char* argv[])
 
   SetJcrInThreadSpecificData(nullptr);
 
-  LoadSdPlugins(me->plugin_directory, me->plugin_names);
+  LoadSdPlugins(me->plugin_directory, me->plugin_names->to_std_list_string());
 
   CleanUpOldFiles();
 

@@ -149,11 +149,11 @@ void alist::destroy()
 
 // convert alist to std::list<std::string>
 
-std::list<std::string> alist::to_std_list_string(alist* list)
+std::list<std::string> alist::to_std_list_string()
 {
   std::list<std::string> result;
   char* cur_cstring = nullptr;
-  foreach_alist (cur_cstring, list) {
+  foreach_alist (cur_cstring, this) {
     result.push_back(cur_cstring);
   }
   return result;

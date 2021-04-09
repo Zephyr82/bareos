@@ -199,7 +199,7 @@ bool LoadPlugins(void* bareos_plugin_interface_version,
                  void* bareos_core_functions,
                  std::vector<Plugin*>& plugin_list,
                  const char* plugin_dir,
-                 alist* plugin_names,
+                 std::list<std::string> plugin_names,
                  const char* type,
                  bool IsPluginCompatible(Plugin* plugin))
 {
@@ -218,11 +218,10 @@ bool LoadPlugins(void* bareos_plugin_interface_version,
    * See if we are loading certain plugins only or all plugins of a certain
    * type.
    */
-  if (plugin_names && plugin_names->size()) {
-    char* name = nullptr;
+  if (!plugin_names.empty()) {
     PoolMem plugin_name(PM_FNAME);
 
-    foreach_alist (name, plugin_names) {
+    for (auto name: plugin_names) {
       /*
        * Generate the plugin name e.g. <name>-<daemon>.so
        */

@@ -54,7 +54,8 @@ TEST(sd, sd_plugins)
 
   (void)!getcwd(plugin_dir, sizeof(plugin_dir) - 1);
 
-  LoadSdPlugins(plugin_dir, NULL);
+  std::list<std::string> empty_list{};
+  LoadSdPlugins(plugin_dir, empty_list);
 
   jcr1->JobId = 111;
   NewPlugins(jcr1);

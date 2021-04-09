@@ -180,7 +180,7 @@ typedef struct s_sdbareosFuncs {
  * Bareos Core Routines -- not used within a plugin
  */
 #ifdef STORAGE_DAEMON
-void LoadSdPlugins(const char* plugin_dir, alist* plugin_names);
+void LoadSdPlugins(const char* plugin_dir, std::list<std::string> plugin_names);
 void UnloadSdPlugins(void);
 int ListSdPlugins(PoolMem& msg);
 void DispatchNewPluginOptions(JobControlRecord* jcr);

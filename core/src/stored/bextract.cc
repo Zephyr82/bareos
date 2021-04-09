@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  LoadSdPlugins(me->plugin_directory, me->plugin_names);
+  LoadSdPlugins(me->plugin_directory, me->plugin_names->to_std_list_string());
 
   ReadCryptoCache(me->working_directory, "bareos-sd",
                   GetFirstPortHostOrder(me->SDaddrs));

@@ -173,8 +173,12 @@ TEST(alist, alist)
 
 TEST(alist, alistToStdListString)
 {
-  alist* list = NULL;
+  alist *list = new alist(10);
   AlistFill(list, 20);
-  std::list<std::string> numberstrings = alist.to_std_list_string();
-  for (auto s : numberstrings) { std::cout << s << std::endl; }
+  std::list<std::string> numberstrings = list->to_std_list_string();
+  int i=0;
+  for (auto s : numberstrings) {
+  	char* buf = (char*)list->get(i++);
+  	EXPECT_STREQ(buf,s.c_str());
+  }
 }

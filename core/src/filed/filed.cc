@@ -276,8 +276,7 @@ int main(int argc, char* argv[])
   ReadStateFile(me->working_directory, "bareos-fd",
                 GetFirstPortHostOrder(me->FDaddrs));
 
-  LoadFdPlugins(me->plugin_directory, me->plugin_names);
-
+  LoadFdPlugins(me->plugin_directory, me->plugin_names->to_std_list_string()); 
   InitJcrChain();
   if (!no_signals) {
     StartWatchdog(); /* start watchdog thread */

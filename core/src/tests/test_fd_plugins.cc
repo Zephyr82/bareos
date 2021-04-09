@@ -103,8 +103,9 @@ TEST(fd, fd_plugins)
   OSDependentInit();
 
   (void)!getcwd(plugin_dir, sizeof(plugin_dir) - 1);
-
-  LoadFdPlugins(plugin_dir, NULL);
+  
+  std::list<std::string> empty_list{};
+  LoadFdPlugins(plugin_dir, empty_list);
 
   jcr1->JobId = 111;
   NewPlugins(jcr1);

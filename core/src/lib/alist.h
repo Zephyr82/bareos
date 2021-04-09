@@ -128,7 +128,7 @@ class alist {
   void destroy();
   void grow(int num);
 
-  std::list<std::string> to_std_list_string(alist* list);
+  std::list<std::string> to_std_list_string();
 
   /*
    * Use it as a stack, pushing and poping from the end

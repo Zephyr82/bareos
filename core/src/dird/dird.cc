@@ -377,7 +377,7 @@ int main(int argc, char* argv[])
 
   DbSetBackendDirs(me->backend_directories);
 #endif
-  LoadDirPlugins(me->plugin_directory, me->plugin_names);
+  LoadDirPlugins(me->plugin_directory, me->plugin_names->to_std_list_string());
 
   /*
    * If we are in testing mode, we don't try to fix the catalog
