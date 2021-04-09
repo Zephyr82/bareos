@@ -165,7 +165,8 @@ typedef struct s_dirbareosFuncs {
  * Bareos Core Routines -- not used within a plugin
  */
 #ifdef DIRECTOR_DAEMON
-void LoadDirPlugins(const char* plugin_dir, std::list<std::string> plugin_names);
+void LoadDirPlugins(const char* plugin_dir,
+                    std::list<std::string> plugin_names);
 void UnloadDirPlugins(void);
 int ListDirPlugins(PoolMem& msg);
 void DispatchNewPluginOptions(JobControlRecord* jcr);

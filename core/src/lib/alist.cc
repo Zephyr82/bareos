@@ -158,4 +158,3 @@ std::list<std::string> alist::to_std_list_string()
   }
   return result;
 }
-

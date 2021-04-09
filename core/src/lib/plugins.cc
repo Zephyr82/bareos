@@ -221,7 +221,7 @@ bool LoadPlugins(void* bareos_plugin_interface_version,
   if (!plugin_names.empty()) {
     PoolMem plugin_name(PM_FNAME);
 
-    for (auto name: plugin_names) {
+    for (auto name : plugin_names) {
       /*
        * Generate the plugin name e.g. <name>-<daemon>.so
        */
