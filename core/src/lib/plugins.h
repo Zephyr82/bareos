@@ -36,7 +36,8 @@
  *                                                                          *
  ****************************************************************************/
 #include <vector>
-
+#include <list>
+#include <string>
 /**
  * Universal return codes from all plugin functions
  */
@@ -99,14 +100,12 @@ typedef struct gen_pluginInfo {
   const char* plugin_usage;
 } PluginInformation;
 
-class alist;
-
 /* Functions */
 bool LoadPlugins(void* bareos_plugin_interface_version,
                  void* bareos_core_functions,
                  std::vector<Plugin*>& plugin_list,
                  const char* plugin_dir,
-                 alist* plugin_names,
+                 std::list<std::string> plugin_names,
                  const char* type,
                  bool IsPluginCompatible(Plugin* plugin));
 void UnloadPlugins(std::vector<Plugin*> plugin_list);

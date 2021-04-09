@@ -282,7 +282,7 @@ static void DumpDirPlugins(FILE* fp) { DumpPlugins(dird_plugin_list, fp); }
  * This entry point is called internally by BAREOS to ensure
  *  that the plugin IO calls come into this code.
  */
-void LoadDirPlugins(const char* plugin_dir, alist* plugin_names)
+void LoadDirPlugins(const char* plugin_dir, std::list<std::string> plugin_names)
 {
   Dmsg0(debuglevel, "Load dir plugins\n");
   if (!plugin_dir) {

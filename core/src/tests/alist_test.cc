@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -169,4 +169,12 @@ TEST(alist, alist)
 {
   test_alist_init_destroy();
   test_alist_dynamic();
+}
+
+TEST(alist, alistToStdListString)
+{
+  alist* list = NULL;
+  AlistFill(list, 20);
+  std::list<std::string> numberstrings = alist.to_std_list_string();
+  for (auto s : numberstrings) { std::cout << s << std::endl; }
 }

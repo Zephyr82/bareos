@@ -1726,7 +1726,7 @@ static void DumpFdPlugins(FILE* fp) { DumpPlugins(fd_plugin_list, fp); }
  * This entry point is called internally by Bareos to ensure that the plugin
  * IO calls come into this code.
  */
-void LoadFdPlugins(const char* plugin_dir, alist* plugin_names)
+void LoadFdPlugins(const char* plugin_dir, std::list<std::string> plugin_names)
 {
   if (!plugin_dir) {
     Dmsg0(debuglevel, "plugin dir is NULL\n");

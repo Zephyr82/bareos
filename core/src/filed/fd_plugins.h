@@ -263,7 +263,7 @@ typedef struct s_bareosInfo {
  * Bareos Core Routines -- not used within a plugin
  */
 #ifdef FILE_DAEMON
-void LoadFdPlugins(const char* plugin_dir, alist* plugin_names);
+void LoadFdPlugins(const char* plugin_dir, std::list<std::string> plugin_names);
 void UnloadFdPlugins(void);
 int ListFdPlugins(PoolMem& msg);
 void NewPlugins(JobControlRecord* jcr);

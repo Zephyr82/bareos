@@ -82,6 +82,11 @@
          (inx)--)
 #endif
 
+
+#include <string>
+#include <list>
+
+
 /**
  * Second arg of init
  */
@@ -122,6 +127,8 @@ class alist {
   int size() const;
   void destroy();
   void grow(int num);
+
+  std::list<std::string> to_std_list_string(alist* list);
 
   /*
    * Use it as a stack, pushing and poping from the end
@@ -176,5 +183,19 @@ inline int alist::size() const
 
 /* How much to grow by each time */
 inline void alist::grow(int num) { num_grow = num; }
+
+
+// convert alist to std::list<std::string>
+
+std::list<std::string> alist::to_std_list_string(alist* list)
+{
+  std::list<std::string> result;
+  char* cur_cstring = nullptr;
+  foreach_alist (cur_cstring, list) {
+    result.push_back(cur_cstring);
+  }
+  return result;
+}
+
 
 #endif  // BAREOS_LIB_ALIST_H_

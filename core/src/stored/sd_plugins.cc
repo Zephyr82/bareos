@@ -397,7 +397,7 @@ static void DumpSdPlugins(FILE* fp) { DumpPlugins(sd_plugin_list, fp); }
  * This entry point is called internally by Bareos to ensure
  *  that the plugin IO calls come into this code.
  */
-void LoadSdPlugins(const char* plugin_dir, alist* plugin_names)
+void LoadSdPlugins(const char* plugin_dir, std::list<std::string> plugin_names)
 {
   Dmsg0(debuglevel, "Load sd plugins\n");
   if (!plugin_dir) {
