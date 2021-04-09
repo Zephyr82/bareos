@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
   pthread_t thid;
   char* uid = NULL;
   char* gid = NULL;
-  std::list<std::string> plugin_names; 
+  std::list<std::string> plugin_names;
 
   setlocale(LC_ALL, "");
   tzset();
@@ -304,10 +304,10 @@ int main(int argc, char* argv[])
                   GetFirstPortHostOrder(me->SDaddrs));
 
   SetJcrInThreadSpecificData(nullptr);
-  if (me->plugin_names){
- 	 plugin_names = me->plugin_names->to_std_list_string();
+  if (me->plugin_names) {
+    plugin_names = me->plugin_names->to_std_list_string();
   }
-  LoadSdPlugins(me->plugin_directory,plugin_names);
+  LoadSdPlugins(me->plugin_directory, plugin_names);
 
   CleanUpOldFiles();
 
@@ -464,7 +464,7 @@ static void CleanUpOldFiles()
   char prbuf[500];
   BErrNo be;
   std::list<std::string> plugin_names;
-  
+
   /* Look for .spool files but don't allow spaces */
   const char* pat1 = "^[^ ]+\\.spool$";
 

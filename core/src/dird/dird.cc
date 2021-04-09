@@ -378,8 +378,8 @@ int main(int argc, char* argv[])
 
   DbSetBackendDirs(me->backend_directories);
 #endif
-  if (me->plugin_names){
-  	plugin_names = me->plugin_names->to_std_list_string(); 
+  if (me->plugin_names) {
+    plugin_names = me->plugin_names->to_std_list_string();
   }
   LoadDirPlugins(me->plugin_directory, plugin_names);
 

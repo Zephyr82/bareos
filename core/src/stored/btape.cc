@@ -168,7 +168,7 @@ int main(int margc, char* margv[])
   char buf[1'000];
   char* DirectorName = NULL;
   DirectorResource* director = NULL;
-  std::list<std::string>  plugin_names;
+  std::list<std::string> plugin_names;
   setlocale(LC_ALL, "");
   tzset();
   bindtextdomain("bareos", LOCALEDIR);
@@ -287,9 +287,9 @@ int main(int margc, char* margv[])
     }
   }
 
-  if (me->plugin_names){
-    plugin_names = me->plugin_names->to_std_list_string(); 
-  } 
+  if (me->plugin_names) {
+    plugin_names = me->plugin_names->to_std_list_string();
+  }
   LoadSdPlugins(me->plugin_directory, plugin_names);
 
   ReadCryptoCache(me->working_directory, "bareos-sd",

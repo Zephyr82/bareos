@@ -234,9 +234,9 @@ int main(int argc, char* argv[])
     }
   }
 
-  if (me->plugin_names){
-    plugin_names = me->plugin_names->to_std_list_string(); 
-  } 
+  if (me->plugin_names) {
+    plugin_names = me->plugin_names->to_std_list_string();
+  }
   LoadSdPlugins(me->plugin_directory, plugin_names);
 
   ReadCryptoCache(me->working_directory, "bareos-sd",

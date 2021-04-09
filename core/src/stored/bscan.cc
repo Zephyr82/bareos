@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
   std::vector<std::string> backend_directories;
 #endif
-  std::list<std::string>  plugin_names;
+  std::list<std::string> plugin_names;
 
   setlocale(LC_ALL, "");
   tzset();
@@ -313,9 +313,9 @@ int main(int argc, char* argv[])
           DirectorName, configfile);
     }
   }
-  if (me->plugin_names){
-    plugin_names = me->plugin_names->to_std_list_string(); 
-  } 
+  if (me->plugin_names) {
+    plugin_names = me->plugin_names->to_std_list_string();
+  }
   LoadSdPlugins(me->plugin_directory, plugin_names);
 
   ReadCryptoCache(me->working_directory, "bareos-sd",
