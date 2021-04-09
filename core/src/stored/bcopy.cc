@@ -105,6 +105,7 @@ int main(int argc, char* argv[])
   DirectorResource* director = NULL;
   bool ignore_label_errors = false;
   DeviceControlRecord *in_dcr, *out_dcr;
+  std::list<std::string> plugin_names;
 
   setlocale(LC_ALL, "");
   tzset();
@@ -193,7 +194,8 @@ int main(int argc, char* argv[])
     }
   }
 
-  LoadSdPlugins(me->plugin_directory, me->plugin_names->to_std_list_string());
+  plugin_names =me->plugin_names->to_std_list_string(); 
+  LoadSdPlugins(me->plugin_directory, plugin_names);
 
   ReadCryptoCache(me->working_directory, "bareos-sd",
                   GetFirstPortHostOrder(me->SDaddrs));

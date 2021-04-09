@@ -225,7 +225,7 @@ bool LoadPlugins(void* bareos_plugin_interface_version,
       /*
        * Generate the plugin name e.g. <name>-<daemon>.so
        */
-      Mmsg(plugin_name, "%s%s", name, type);
+      Mmsg(plugin_name, "%s%s", name.c_str(), type);
 
       /*
        * Generate the full pathname to the plugin to load.

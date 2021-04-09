@@ -117,6 +117,7 @@ int main(int argc, char* argv[])
   FILE* fd;
   char line[1000];
   bool got_inc = false;
+  std::list<std::string> plugin_names;
 
   setlocale(LC_ALL, "");
   tzset();
@@ -233,7 +234,8 @@ int main(int argc, char* argv[])
     }
   }
 
-  LoadSdPlugins(me->plugin_directory, me->plugin_names->to_std_list_string());
+  plugin_names =me->plugin_names->to_std_list_string(); 
+  LoadSdPlugins(me->plugin_directory, plugin_names);
 
   ReadCryptoCache(me->working_directory, "bareos-sd",
                   GetFirstPortHostOrder(me->SDaddrs));

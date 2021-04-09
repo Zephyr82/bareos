@@ -221,6 +221,7 @@ int main(int argc, char* argv[])
   bool export_config_schema = false;
   char* uid = NULL;
   char* gid = NULL;
+  std::list<std::string> plugin_names;
 
   setlocale(LC_ALL, "");
   tzset();
@@ -377,7 +378,10 @@ int main(int argc, char* argv[])
 
   DbSetBackendDirs(me->backend_directories);
 #endif
-  LoadDirPlugins(me->plugin_directory, me->plugin_names->to_std_list_string());
+  if (me->plugin_names){
+  	plugin_names = me->plugin_names->to_std_list_string(); 
+  }
+  LoadDirPlugins(me->plugin_directory, plugin_names);
 
   /*
    * If we are in testing mode, we don't try to fix the catalog

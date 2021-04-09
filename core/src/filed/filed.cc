@@ -100,6 +100,7 @@ int main(int argc, char* argv[])
   bool keep_readall_caps = false;
   char* uid = NULL;
   char* gid = NULL;
+  std::list<std::string> plugin_names;
 
   setlocale(LC_ALL, "");
   tzset();
@@ -275,8 +276,9 @@ int main(int argc, char* argv[])
                 GetFirstPortHostOrder(me->FDaddrs));
   ReadStateFile(me->working_directory, "bareos-fd",
                 GetFirstPortHostOrder(me->FDaddrs));
+  plugin_names = me->plugin_names->to_std_list_string();
+  LoadFdPlugins(me->plugin_directory, plugin_names);
 
-  LoadFdPlugins(me->plugin_directory, me->plugin_names->to_std_list_string());
   InitJcrChain();
   if (!no_signals) {
     StartWatchdog(); /* start watchdog thread */
