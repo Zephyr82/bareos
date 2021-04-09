@@ -269,6 +269,7 @@ const char* IPADDR::build_address_str(char* buf,
 // check if two addresses are the same
 bool IsSameIpAddress(IPADDR* first, IPADDR* second)
 {
+  if (first == nullptr || second == nullptr) { return false; }
   return (first->GetSockaddrLen() == second->GetSockaddrLen()
           && memcmp(first->get_sockaddr(), second->get_sockaddr(),
                     first->GetSockaddrLen())
