@@ -28,10 +28,17 @@
 
 #include "lib/address_conf.h"
 
-TEST(address_conf, address_conf)
+TEST(address_conf, IsSameIpAddress)
 {
   IPADDR* addr_ipv4 = new IPADDR(AF_INET);
   IPADDR* addr_ipv6 = new IPADDR(AF_INET6);
+
   EXPECT_FALSE(IsSameIpAddress(addr_ipv4, addr_ipv6));
+
+  IPADDR* clone4(addr_ipv4);
+  IPADDR* clone6(addr_ipv6);
+
+  EXPECT_TRUE(IsSameIpAddress(addr_ipv4, clone4));
+  EXPECT_TRUE(IsSameIpAddress(addr_ipv6, clone6));
 }
 
