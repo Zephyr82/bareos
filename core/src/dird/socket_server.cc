@@ -50,7 +50,7 @@ static char hello_client[] = "Hello Client %127s calling";
 
 /* Global variables */
 static ThreadList thread_list;
-static alist* sock_fds = NULL;
+static std::list<s_sockfd*> stock_fds;
 static pthread_t tcp_server_tid;
 static ConnectionPool* client_connections = NULL;
 
@@ -192,14 +192,10 @@ bool StartSocketServer(dlist* addrs)
 
 void StopSocketServer()
 {
-  if (sock_fds) {
-    BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
-    delete sock_fds;
-    sock_fds = nullptr;
-  }
   if (client_connections) {
     delete (client_connections);
     client_connections = nullptr;
   }
+  sock_fds.clear();
 }
 } /* namespace directordaemon */

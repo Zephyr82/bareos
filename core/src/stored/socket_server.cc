@@ -43,7 +43,7 @@
 namespace storagedaemon {
 
 static ThreadList thread_list;
-static alist* sock_fds = NULL;
+static std::list<s_sockfd*> sock_fds;
 static pthread_t tcp_server_tid;
 
 /**
@@ -154,11 +154,8 @@ void StartSocketServer(dlist* addrs)
 
 void StopSocketServer()
 {
-  if (sock_fds) {
-    BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
-    delete sock_fds;
-    sock_fds = NULL;
-  }
+  BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
+  sock_fds.clear();
 }
 
 } /* namespace storagedaemon */

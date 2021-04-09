@@ -43,7 +43,7 @@ namespace filedaemon {
 /* Global variables */
 static ThreadList thread_list;
 static pthread_t tcp_server_tid;
-static alist* sock_fds = NULL;
+static std::list<s_sockfd*> sock_fds;
 
 /**
  * Connection request. We accept connections either from the Director or the
@@ -140,17 +140,12 @@ void StartSocketServer(dlist* addrs)
 void StopSocketServer(bool wait)
 {
   Dmsg0(100, "StopSocketServer\n");
-  if (sock_fds) {
-    BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
-    /*
-     * before thread_servers terminates,
-     * it calls cleanup_bnet_thread_server_tcp
-     */
-    if (wait) {
-      pthread_join(tcp_server_tid, NULL);
-      delete (sock_fds);
-      sock_fds = NULL;
-    }
-  }
+  BnetStopAndWaitForThreadServerTcp(tcp_server_tid);
+  /*
+   * before thread_servers terminates,
+   * it calls cleanup_bnet_thread_server_tcp
+   */
+  if (wait) { pthread_join(tcp_server_tid, NULL); }
+  sock_fds.clear();
 }
 } /* namespace filedaemon */
