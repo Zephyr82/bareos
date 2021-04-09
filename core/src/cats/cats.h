@@ -42,7 +42,7 @@
 
 #include <string>
 #include <vector>
-
+#include <unordered_set>
 class dlist;
 
 /* import automatically generated SQL_QUERY */
@@ -534,7 +534,8 @@ typedef int(DB_RESULT_HANDLER)(void*, int, char**);
 #define DbLock(mdb) mdb->LockDb(__FILE__, __LINE__)
 #define DbUnlock(mdb) mdb->UnlockDb(__FILE__, __LINE__)
 
-class pathid_cache;
+using pathid_cache = std::unordered_set<std::string>;
+// class pathid_cache;
 
 /*
  * Initial size of query hash table and hint for number of pages.
