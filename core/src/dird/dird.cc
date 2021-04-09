@@ -94,15 +94,16 @@ void InitDeviceResources();
 static char* runjob = NULL;
 static bool background = true;
 static bool test_config = false;
-static alist* reload_table = NULL;
-
-/* Globals Imported */
-extern ResourceItem job_items[];
 
 struct resource_table_reference {
   int JobCount;
   BareosResource** res_table;
 };
+static std::list<resource_table_reference*> reload_table;
+
+/* Globals Imported */
+extern ResourceItem job_items[];
+
 
 static void FreeSavedResources(resource_table_reference* table)
 {
@@ -123,24 +124,19 @@ static void FreeSavedResources(resource_table_reference* table)
  */
 static void ReloadJobEndCb(JobControlRecord* jcr, void* ctx)
 {
-  int i;
-  resource_table_reference* table;
-
   LockJobs();
   LockRes(my_config);
 
-  foreach_alist_index (i, table, reload_table) {
-    if (table == (resource_table_reference*)ctx) {
-      if (table->JobCount) {
-        table->JobCount--;
-        if (table->JobCount == 0) {
-          Dmsg1(100, "Last reference to old configuration table: %#010x\n",
-                table);
-          FreeSavedResources(table);
-          reload_table->remove(i);
-          free(table);
-          break;
-        }
+  for (auto table : reload_table) {
+    if (table->JobCount) {
+      table->JobCount--;
+      if (table->JobCount == 0) {
+        Dmsg1(100, "Last reference to old configuration table: %#010x\n",
+              table);
+        FreeSavedResources(table);
+        reload_table.remove(table);
+        free(table);
+        break;
       }
     }
   }
@@ -638,8 +634,7 @@ bool DoReloadConfig()
     Dmsg0(10, "Director's configuration file reread.\n");
 
     if (num_running_jobs > 0) {
-      if (!reload_table) { reload_table = new alist(10, not_owned_by_alist); }
-      reload_table->push(new_table);
+      reload_table.push_back(new_table);
     } else {  // no jobs running
       FreeSavedResources(&prev_config);
     }
