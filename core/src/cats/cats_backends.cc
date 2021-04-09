@@ -61,7 +61,6 @@ static struct backend_interface_mapping_t {
  * All loaded backends.
  */
 static std::vector<backend_shared_library_t*> loaded_backends;
-// static alist* loaded_backends = NULL;
 static std::vector<std::string> backend_dirs;
 
 void DbSetBackendDirs(std::vector<std::string>& new_backend_dirs)
@@ -320,5 +319,5 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 
 void DbFlushBackends(void) {}
 #  endif /* HAVE_DYNAMIC_CATS_BACKENDS */
-#endif   /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
-            HAVE_DBI */
+#endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
+          HAVE_DBI */
