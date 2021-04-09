@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -146,3 +146,16 @@ void alist::destroy()
     items = NULL;
   }
 }
+
+// convert alist to std::list<std::string>
+
+std::list<std::string> alist::to_std_list_string(alist* list)
+{
+  std::list<std::string> result;
+  char* cur_cstring = nullptr;
+  foreach_alist (cur_cstring, list) {
+    result.push_back(cur_cstring);
+  }
+  return result;
+}
+

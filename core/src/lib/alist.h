@@ -185,17 +185,4 @@ inline int alist::size() const
 inline void alist::grow(int num) { num_grow = num; }
 
 
-// convert alist to std::list<std::string>
-
-std::list<std::string> alist::to_std_list_string(alist* list)
-{
-  std::list<std::string> result;
-  char* cur_cstring = nullptr;
-  foreach_alist (cur_cstring, list) {
-    result.push_back(cur_cstring);
-  }
-  return result;
-}
-
-
 #endif  // BAREOS_LIB_ALIST_H_
