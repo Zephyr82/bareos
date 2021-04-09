@@ -43,7 +43,6 @@
 #include <string>
 #include <vector>
 #include <unordered_set>
-class dlist;
 
 /* import automatically generated SQL_QUERY */
 #include "bdb_query_enum_class.h"
@@ -1115,7 +1114,6 @@ struct SqlPoolEntry {
  * Pooled backend list descriptor (one defined per backend defined in config)
  */
 struct SqlPoolDescriptor {
-  dlist* pool_entries = nullptr; /**< Linked list of all pool entries */
   bool active = false;    /**< Is this an active pool, after a config reload an
                       pool is    made inactive */
   time_t last_update = 0; /**< When was this pool last updated */
