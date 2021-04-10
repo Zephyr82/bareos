@@ -513,21 +513,21 @@ extern "C" void* jobq_server(void* arg)
       int Priority;
       bool running_allow_mix = false;
       auto je = jq->waiting_jobs.begin();
-      JobControlRecord* re = jq->running_jobs.front();
-      if (re) {
-        Priority = re->JobPriority;
-        Dmsg2(2300, "JobId %d is running. Look for pri=%d\n", re->JobId,
+      auto re = jq->running_jobs.begin();
+      if (*re) {
+        Priority = (*re)->JobPriority;
+        Dmsg2(2300, "JobId %d is running. Look for pri=%d\n", (*re)->JobId,
               Priority);
         running_allow_mix = true;
 
-        for (; re;) {
-          Dmsg2(2300, "JobId %d is also running with %s\n", re->JobId,
-                re->impl->res.job->allow_mixed_priority ? "mix" : "no mix");
-          if (!re->impl->res.job->allow_mixed_priority) {
+        while (re != jq->waiting_jobs.end()) {
+          Dmsg2(2300, "JobId %d is also running with %s\n", (*re)->JobId,
+                (*re)->impl->res.job->allow_mixed_priority ? "mix" : "no mix");
+          if (!(*re)->impl->res.job->allow_mixed_priority) {
             running_allow_mix = false;
             break;
           }
-          re = std::next(re, 1);
+          std::advance(re, 1);
         }
         Dmsg1(2300, "The running job(s) %s mixing priorities.\n",
               running_allow_mix ? "allow" : "don't allow");
