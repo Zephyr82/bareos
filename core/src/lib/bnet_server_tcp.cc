@@ -294,7 +294,7 @@ void BnetThreadServerTcp(
     FD_ZERO(&sockset);
 
     s_sockfd* fd_ptr = nullptr;
-    foreach_alist (fd_ptr, sockfds) {
+    for (auto fd_ptr : sockfds) {
       FD_SET((unsigned)fd_ptr->fd, &sockset);
       maxfd = std::max(fd_ptr->fd, maxfd);
     }
@@ -316,7 +316,7 @@ void BnetThreadServerTcp(
       break;
     }
 
-    foreach_alist (fd_ptr, sockfds) {
+    for (auto fd_ptr : sockfds) {
       if (FD_ISSET(fd_ptr->fd, &sockset)) {
 #else
     static constexpr int timeout_ms{1000};
