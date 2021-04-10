@@ -604,7 +604,7 @@ set(SYSTEM_TESTS
     spool
     bareos
     bareos-acl
-    bscan
+    bscan-bextract-bls
     bconsole-status-client
     config-syntax-crash
     copy-archive-job
