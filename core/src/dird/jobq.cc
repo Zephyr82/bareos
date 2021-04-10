@@ -39,6 +39,7 @@
 #include "dird/storage.h"
 #include "lib/berrno.h"
 #include "lib/thread_specific_data.h"
+#include <algorithm>
 
 namespace directordaemon {
 
