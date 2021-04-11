@@ -103,9 +103,7 @@ int JobqInit(jobq_t* jq, int max_workers, void* (*engine)(void* arg))
   jq->engine = engine;           /* routine to run */
   jq->valid = JOBQ_VALID;
 
-  /*
-   * Initialize the job queues
-   */
+  /* Initialize the job queues */
   jq->waiting_jobs.clear();
   jq->running_jobs.clear();
   jq->ready_jobs.clear();
@@ -127,9 +125,7 @@ int JobqDestroy(jobq_t* jq)
   P(jq->mutex);
   jq->valid = 0; /* prevent any more operations */
 
-  /*
-   * If any threads are active, wake them
-   */
+  /* If any threads are active, wake them */
   if (jq->num_workers > 0) {
     jq->quit = true;
     while (jq->num_workers > 0) {
@@ -175,18 +171,14 @@ extern "C" void* sched_wait(void* arg)
   time_t wtime = jcr->sched_time - time(NULL);
   jcr->setJobStatus(JS_WaitStartTime);
 
-  /*
-   * Wait until scheduled time arrives
-   */
+  /* Wait until scheduled time arrives */
   if (wtime > 0) {
     Jmsg(jcr, M_INFO, 0,
          _("Job %s waiting %d seconds for scheduled start time.\n"), jcr->Job,
          wtime);
   }
 
-  /*
-   * Check every 30 seconds if canceled
-   */
+  /* Check every 30 seconds if canceled */
   while (wtime > 0) {
     Dmsg3(2300, "Waiting on sched time, jobid=%d secs=%d use=%d\n", jcr->JobId,
           wtime, jcr->UseCount());
@@ -217,9 +209,7 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
   wait_pkt* sched_pkt;
 
   if (!jcr->impl->term_wait_inited) {
-    /*
-     * Initialize termination condition variable
-     */
+    /* Initialize termination condition variable */
     if ((status = pthread_cond_init(&jcr->impl->term_wait, NULL)) != 0) {
       BErrNo be;
       Jmsg1(jcr, M_FATAL, 0, _("Unable to init job cond variable: ERR=%s\n"),
@@ -260,20 +250,14 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
   }
   item = jcr;
 
-  /*
-   * While waiting in a queue this job is not attached to a thread
-   */
+  /* While waiting in a queue this job is not attached to a thread */
   SetJcrInThreadSpecificData(nullptr);
   if (JobCanceled(jcr)) {
-    /*
-     * Add job to ready queue so that it is canceled quickly
-     */
+    /* Add job to ready queue so that it is canceled quickly */
     jq->ready_jobs.push_front(item);
     Dmsg1(2300, "Prepended job=%d to ready queue\n", jcr->JobId);
   } else {
-    /*
-     * Add this job to the wait queue in priority sorted order
-     */
+    /* Add this job to the wait queue in priority sorted order */
     for (auto li : jq->waiting_jobs) {
       Dmsg2(2300, "waiting item jobid=%d priority=%d\n", li->JobId,
             li->JobPriority);
@@ -289,18 +273,14 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
       }
     }
 
-    /*
-     * If not jobs in wait queue, append it
-     */
+    /* If not jobs in wait queue, append it */
     if (!inserted) {
       jq->waiting_jobs.push_back(item);
       Dmsg1(2300, "Appended item jobid=%d to waiting queue\n", jcr->JobId);
     }
   }
 
-  /*
-   * Ensure that at least one server looks at the queue.
-   */
+  /* Ensure that at least one server looks at the queue. */
   status = StartServer(jq);
 
   V(jq->mutex);
@@ -338,9 +318,7 @@ int JobqRemove(jobq_t* jq, JobControlRecord* jcr)
     return EINVAL;
   }
 
-  /*
-   * Move item to be the first on the list
-   */
+  /* Move item to be the first on the list */
   jq->waiting_jobs.remove(item);
   jq->ready_jobs.push_front(item);
   Dmsg2(2300, "JobqRemove jobid=%d jcr=0x%x moved to ready queue\n", jcr->JobId,
@@ -403,9 +381,7 @@ extern "C" void* jobq_server(void* arg)
       timeout.tv_sec = tv.tv_sec + 4;
 
       while (!jq->quit) {
-        /*
-         * Wait 4 seconds, then if no more work, exit
-         */
+        /* Wait 4 seconds, then if no more work, exit */
         Dmsg0(2300, "pthread_cond_timedwait()\n");
         status = pthread_cond_timedwait(&jq->work, &jq->mutex, &timeout);
         if (status == ETIMEDOUT) {
@@ -413,9 +389,7 @@ extern "C" void* jobq_server(void* arg)
           timedout = true;
           break;
         } else if (status != 0) {
-          /*
-           * This shouldn't happen
-           */
+          /* This shouldn't happen */
           Dmsg0(2300, "This shouldn't happen\n");
           jq->num_workers--;
           V(jq->mutex);
@@ -425,9 +399,7 @@ extern "C" void* jobq_server(void* arg)
       }
     }
 
-    /*
-     * If anything is in the ready queue, run it
-     */
+    /* If anything is in the ready queue, run it */
     Dmsg0(2300, "Checking ready queue.\n");
     while (!jq->ready_jobs.empty() && !jq->quit) {
       JobControlRecord* jcr;
@@ -445,37 +417,27 @@ extern "C" void* jobq_server(void* arg)
       }
       jq->running_jobs.push_back(*je);
 
-      /*
-       * Attach jcr to this thread while we run the job
-       */
+      /* Attach jcr to this thread while we run the job */
       jcr->SetKillable(true);
       SetJcrInThreadSpecificData(jcr);
       Dmsg1(2300, "Took jobid=%d from ready and appended to run\n", jcr->JobId);
 
-      /*
-       * Release job queue lock
-       */
+      /* Release job queue lock */
       V(jq->mutex);
 
-      /*
-       * Call user's routine here
-       */
+      /* Call user's routine here */
       Dmsg3(2300, "Calling user engine for jobid=%d use=%d stat=%c\n",
             jcr->JobId, jcr->UseCount(), jcr->JobStatus);
       jq->engine(*je);
 
-      /*
-       * Job finished detach from thread
-       */
+      /* Job finished detach from thread */
       RemoveJcrFromThreadSpecificData(*je);
       (*je)->SetKillable(false);
 
       Dmsg2(2300, "Back from user engine jobid=%d use=%d.\n", jcr->JobId,
             jcr->UseCount());
 
-      /*
-       * Reacquire job queue lock
-       */
+      /* Reacquire job queue lock */
       P(jq->mutex);
       Dmsg0(200, "Done lock mutex after running job. Release locks.\n");
       jq->running_jobs.remove(*je);
@@ -495,9 +457,7 @@ extern "C" void* jobq_server(void* arg)
 
       if (RescheduleJob(jcr, jq, *je)) { continue; /* go look for more work */ }
 
-      /*
-       * Clean up and release old jcr
-       */
+      /* Clean up and release old jcr */
       Dmsg2(2300, "====== Termination job=%d use_cnt=%d\n", jcr->JobId,
             jcr->UseCount());
       jcr->impl->SDJobStatus = 0;
@@ -540,10 +500,8 @@ extern "C" void* jobq_server(void* arg)
        * Walk down the list of waiting jobs and attempt to acquire the resources
        * it needs.
        */
-      for (; *je;) {
-        /*
-         * je is current job item on the queue, jn is the next one
-         */
+      while (je != jq->waiting_jobs.end()) {
+        /* je is current job item on the queue, jn is the next one */
         JobControlRecord* jcr = *je;
         auto jn = std::next(je);
 
@@ -551,9 +509,7 @@ extern "C" void* jobq_server(void* arg)
               jcr->JobPriority, Priority,
               jcr->impl->res.job->allow_mixed_priority ? "mix" : "no mix");
 
-        /*
-         * Take only jobs of correct Priority
-         */
+        /* Take only jobs of correct Priority */
         if (!(jcr->JobPriority == Priority
               || (jcr->JobPriority < Priority
                   && jcr->impl->res.job->allow_mixed_priority
@@ -563,9 +519,7 @@ extern "C" void* jobq_server(void* arg)
         }
 
         if (!AcquireResources(jcr)) {
-          /*
-           * If resource conflict, job is canceled
-           */
+          /* If resource conflict, job is canceled */
           if (!JobCanceled(jcr)) {
             je = jn; /* point to next waiting job */
             continue;
@@ -581,14 +535,12 @@ extern "C" void* jobq_server(void* arg)
         jq->ready_jobs.push_back(*je);
         Dmsg1(2300, "moved JobId=%d from wait to ready queue\n", (*je)->JobId);
         je = jn; /* Point to next waiting job */
-      }          /* end for loop */
+      }          /* end while loop */
     }            /* end if */
 
     Dmsg0(2300, "Done checking wait queue.\n");
 
-    /*
-     * If no more ready work and we are asked to quit, then do it
-     */
+    /* If no more ready work and we are asked to quit, then do it */
     if (jq->ready_jobs.empty() && jq->quit) {
       jq->num_workers--;
       if (jq->num_workers == 0) {
@@ -624,9 +576,7 @@ extern "C" void* jobq_server(void* arg)
       Bmicrosleep(2, 0); /* pause for 2 seconds */
       P(jq->mutex);
 
-      /*
-       * Recompute work as something may have changed in last 2 secs
-       */
+      /* Recompute work as something may have changed in last 2 secs */
       work = !jq->ready_jobs.empty() || !jq->waiting_jobs.empty();
     }
     Dmsg1(2300, "Loop again. work=%d\n", work);
@@ -648,25 +598,17 @@ static bool RescheduleJob(JobControlRecord* jcr,
 {
   bool resched = false, retval = false;
 
-  /*
-   * Reschedule the job if requested and possible
-   */
+  /* Reschedule the job if requested and possible */
 
-  /*
-   * Basic condition is that more reschedule times remain
-   */
+  /* Basic condition is that more reschedule times remain */
   if (jcr->impl->res.job->RescheduleTimes == 0
       || jcr->impl->reschedule_count < jcr->impl->res.job->RescheduleTimes) {
     resched =
-        /*
-         * Check for incomplete jobs
-         */
+        /* Check for incomplete jobs */
         (jcr->impl->res.job->RescheduleIncompleteJobs && jcr->IsIncomplete()
          && jcr->is_JobType(JT_BACKUP) && !jcr->is_JobLevel(L_BASE))
         ||
-        /*
-         * Check for failed jobs
-         */
+        /* Check for failed jobs */
         (jcr->impl->res.job->RescheduleOnError && !jcr->IsTerminatedOk()
          && !jcr->is_JobStatus(JS_Canceled) && jcr->is_JobType(JT_BACKUP));
   }
@@ -777,9 +719,7 @@ static bool RescheduleJob(JobControlRecord* jcr,
  */
 static bool AcquireResources(JobControlRecord* jcr)
 {
-  /*
-   * Set that we didn't acquire any resourse locks yet.
-   */
+  /* Set that we didn't acquire any resourse locks yet. */
   jcr->impl->acquired_resource_locks = false;
 
   /*
@@ -831,9 +771,7 @@ static bool AcquireResources(JobControlRecord* jcr)
   }
 
   if (!IncClientConcurrency(jcr)) {
-    /*
-     * Back out previous locks
-     */
+    /* Back out previous locks */
     DecWriteStore(jcr);
     DecReadStore(jcr);
     jcr->setJobStatus(JS_WaitClientRes);
@@ -842,9 +780,7 @@ static bool AcquireResources(JobControlRecord* jcr)
   }
 
   if (!IncJobConcurrency(jcr)) {
-    /*
-     * Back out previous locks
-     */
+    /* Back out previous locks */
     DecWriteStore(jcr);
     DecReadStore(jcr);
     DecClientConcurrency(jcr);
