@@ -474,7 +474,7 @@ extern "C" void* jobq_server(void* arg)
       bool running_allow_mix = false;
       auto je = jq->waiting_jobs.begin();
       auto re = jq->running_jobs.begin();
-      if (*re) {
+      if (!jq->running_jobs.empty()) {
         Priority = (*re)->JobPriority;
         Dmsg2(2300, "JobId %d is running. Look for pri=%d\n", (*re)->JobId,
               Priority);
