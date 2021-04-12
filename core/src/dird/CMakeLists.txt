@@ -103,6 +103,12 @@ if(HAVE_WIN32)
   list(APPEND DIRD_OBJECTS_SRCS ../win32/dird/dirdres.rc)
 endif()
 
+if(NOT HAVE_JANSSON)
+  message(
+    FATAL_ERROR "FATAL ERROR: jansson library is required but was not found."
+  )
+endif()
+
 if(HAVE_PAM)
   include_directories(${PAM_INCLUDE_DIRS})
   list(APPEND DIRD_OBJECTS_SRCS auth_pam.cc)
