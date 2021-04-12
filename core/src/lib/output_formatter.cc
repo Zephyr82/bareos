@@ -33,7 +33,6 @@
 #include "include/bareos.h"
 #define NEED_JANSSON_NAMESPACE
 #include "lib/output_formatter.h"
-#include "lib/json.h"
 
 const char* json_error_message_template
     = "{ "
@@ -51,8 +50,6 @@ OutputFormatter::OutputFormatter(SEND_HANDLER* send_func_arg,
                                  void* filter_ctx_arg,
                                  int api_mode)
 {
-  InitializeJson();
-
   send_func = send_func_arg;
   filter_func = filter_func_arg;
   send_ctx = send_ctx_arg;
