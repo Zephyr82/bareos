@@ -21,6 +21,7 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 add_subdirectory(filed)
 
 if(NOT client-only)
+  add_subdirectory(json-develop)
   add_subdirectory(tools)
   add_subdirectory(cats)
   if(NOT HAVE_WIN32 AND ndmp)
