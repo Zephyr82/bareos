@@ -247,6 +247,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   if(${CMAKE_CXX_COMPILER_ID} MATCHES SunPro)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
   endif()
+
+  include_directories(/usr/include/jansson)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")

@@ -164,7 +164,7 @@ elseif(
   )
 endif()
 
-bareosfindlibraryandheaders("jansson" "jansson.h" "")
+bareosfindlibraryandheaders("jansson" "jansson.h" "/usr/include/jansson")
 bareosfindlibraryandheaders("rados" "rados/librados.h" "")
 bareosfindlibraryandheaders("radosstriper" "radosstriper/libradosstriper.h" "")
 bareosfindlibraryandheaders("cephfs" "cephfs/libcephfs.h" "")
