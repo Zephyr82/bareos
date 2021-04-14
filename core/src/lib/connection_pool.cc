@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,8 @@
 #include "lib/alist.h"
 #include "lib/bsys.h"
 #include "lib/bsock.h"
+
+using ConnectionList = std::list<Connection*>;
 
 /*
  * Connection
@@ -102,41 +104,36 @@ bool Connection::take()
  */
 ConnectionPool::ConnectionPool()
 {
-  connections_ = new alist(10, false);
-  /*
-   * Initialize mutex and condition variable objects.
-   */
+  /* Initialize mutex and condition variable objects.  */
   pthread_mutex_init(&add_mutex_, nullptr);
   pthread_cond_init(&add_cond_var_, nullptr);
 }
 
 ConnectionPool::~ConnectionPool()
 {
-  delete (connections_);
+  connections_.clear();
   pthread_mutex_destroy(&add_mutex_);
   pthread_cond_destroy(&add_cond_var_);
 }
 
 void ConnectionPool::cleanup()
 {
-  Connection* connection = nullptr;
-  int i = 0;
-  for (i = connections_->size() - 1; i >= 0; i--) {
-    connection = (Connection*)connections_->get(i);
+  int i{};
+  for (auto connection : connections_) {
+    i++;
     Dmsg2(800, "checking connection %s (%d)\n", connection->name(), i);
     if (!connection->check()) {
       Dmsg2(120, "connection %s (%d) is terminated => removed\n",
             connection->name(), i);
-      connections_->remove(i);
-      delete (connection);
+      connections_.remove(connection);
     }
   }
 }
 
-alist* ConnectionPool::get_as_alist()
+ConnectionList* ConnectionPool::get_as_ConnectionList_pointer()
 {
   cleanup();
-  return connections_;
+  return &connections_;
 }
 
 bool ConnectionPool::add(Connection* connection)
@@ -144,7 +141,7 @@ bool ConnectionPool::add(Connection* connection)
   cleanup();
   Dmsg1(120, "add connection: %s\n", connection->name());
   P(add_mutex_);
-  connections_->append(connection);
+  connections_.push_back(connection);
   pthread_cond_broadcast(&add_cond_var_);
   V(add_mutex_);
   return true;
@@ -166,9 +163,8 @@ Connection* ConnectionPool::add_connection(const char* name,
 
 Connection* ConnectionPool::get_connection(const char* name)
 {
-  Connection* connection = nullptr;
   if (!name) { return nullptr; }
-  foreach_alist (connection, connections_) {
+  for (auto connection : connections_) {
     if (connection->check() && connection->authenticated()
         && connection->bsock() && (!connection->in_use())
         && bstrcmp(name, connection->name())) {
@@ -219,16 +215,8 @@ int ConnectionPool::WaitForNewConnection(timespec& timeout)
 
 bool ConnectionPool::remove(Connection* connection)
 {
-  bool removed = false;
-  for (int i = connections_->size() - 1; i >= 0; i--) {
-    if (connections_->get(i) == connection) {
-      connections_->remove(i);
-      removed = true;
-      Dmsg0(120, "removed connection.\n");
-      break;
-    }
-  }
-  return removed;
+  connections_.remove(connection);
+  return true;
 }
 
 Connection* ConnectionPool::remove(const char* name, int timeout_in_seconds)

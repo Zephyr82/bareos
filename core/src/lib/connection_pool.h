@@ -28,8 +28,8 @@
 #ifndef BAREOS_LIB_CONNECTION_POOL_H_
 #define BAREOS_LIB_CONNECTION_POOL_H_
 
+#include <list>
 
-class alist;
 class BareosSocket;
 
 class Connection {
@@ -63,6 +63,9 @@ class Connection {
   pthread_mutex_t mutex_;
 };
 
+using ConnectionList = std::list<Connection*>;
+
+
 class ConnectionPool {
  public:
   ConnectionPool();
@@ -73,11 +76,11 @@ class ConnectionPool {
                              BareosSocket* socket,
                              bool authenticated = true);
   Connection* remove(const char* name, int timeout_in_seconds = 0);
-  alist* get_as_alist();
+  ConnectionList* get_as_ConnectionList_pointer();
   void cleanup();
 
  private:
-  alist* connections_;
+  ConnectionList connections_;
   int WaitForNewConnection(timespec& timeout);
   bool add(Connection* connection);
   bool remove(Connection* connection);
