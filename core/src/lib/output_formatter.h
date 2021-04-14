@@ -54,6 +54,8 @@ typedef struct json_t json_t;
 
 #include "lib/alist.h"
 #include "lib/api_mode.h"
+#include "nlohmann/json.hpp"
+using json = nlohmann::json;
 
 class PoolMem;
 

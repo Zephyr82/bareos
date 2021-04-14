@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -55,6 +55,8 @@
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include <sstream>
+#include <iomanip>
 
 namespace directordaemon {
 
@@ -2954,20 +2956,17 @@ static bool DotHelpCmd(UaContext* ua, const char* cmd)
 
 static bool VersionCmd(UaContext* ua, const char* cmd)
 {
-  ua->send->ObjectStart("version");
-  ua->send->ObjectKeyValue("name", my_name, "%s ");
-  ua->send->ObjectKeyValue("type", "bareos-director");
-  ua->send->ObjectKeyValue("Version", "%s: ", kBareosVersionStrings.Full,
-                           "%s ");
-  ua->send->ObjectKeyValue("bdate", kBareosVersionStrings.Date, "(%s) ");
-  ua->send->ObjectKeyValue("operatingsystem", kBareosVersionStrings.GetOsInfo(),
-                           "%s ");
-  ua->send->ObjectKeyValue("distname", PLATFORM, "%s ");
-  ua->send->ObjectKeyValue("distversion", kBareosVersionStrings.GetOsInfo(),
-                           "%s ");
-  ua->send->ObjectKeyValue("CustomVersionId", NPRTB(me->verid), "%s\n");
-  ua->send->ObjectEnd("version");
-
+  json j;
+  j["jsonrpc"] = "2.0";
+  j["id"] = "null";
+  j["result"]["version"]["type"] = "bareos-director";
+  j["result"]["version"]["Version"] = kBareosVersionStrings.Full;
+  j["result"]["version"]["date"] = kBareosVersionStrings.Date;
+  j["result"]["version"]["operatingsystem"] = kBareosVersionStrings.GetOsInfo();
+  j["result"]["version"]["CustomVersionId"] = NPRTB(me->verid);
+  std::stringstream s;
+  s << std::setw(2) << j;
+  ua->SendMsg(s.str().c_str());
   return true;
 }
 
