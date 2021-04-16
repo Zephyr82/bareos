@@ -36,7 +36,6 @@ enum class BnetServerState
   kEnded
 };
 
-class alist;
 class dlist;
 
 struct s_sockfd {

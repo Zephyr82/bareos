@@ -170,7 +170,7 @@ void RegisterJobEndCallback(JobControlRecord* jcr,
   item->JobEndCb = JobEndCb;
   item->ctx = ctx;
 
-  jcr->job_end_callbacks.push((void*)item);
+  jcr->job_end_callbacks.push(item);
 }
 
 /*

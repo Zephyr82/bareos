@@ -38,7 +38,8 @@
  * Private grow list function. Used to insure that
  *   at least one more "slot" is available.
  */
-void alist::GrowList()
+template <class T>
+void alist<T>::GrowList()
 {
   if (items == NULL) {
     if (num_grow == 0) { num_grow = 1; /* default if not initialized */ }
@@ -50,7 +51,8 @@ void alist::GrowList()
   }
 }
 
-void* alist::first()
+template <class T>
+T* alist<T>::first()
 {
   cur_item = 1;
   if (num_items == 0) {
@@ -60,7 +62,8 @@ void* alist::first()
   }
 }
 
-void* alist::last()
+template <class T>
+T* alist<T>::last()
 {
   if (num_items == 0) {
     return NULL;
@@ -70,7 +73,8 @@ void* alist::last()
   }
 }
 
-void* alist::next()
+template <class T>
+T* alist<T>::next()
 {
   if (cur_item >= num_items) {
     return NULL;
@@ -79,7 +83,8 @@ void* alist::next()
   }
 }
 
-void* alist::prev()
+template <class T>
+T* alist<T>::prev()
 {
   if (cur_item <= 1) {
     return NULL;
@@ -91,7 +96,8 @@ void* alist::prev()
 /**
  * prepend an item to the list -- i.e. add to beginning
  */
-void alist::prepend(void* item)
+template <class T>
+void alist<T>::prepend(T* item)
 {
   GrowList();
   if (num_items == 0) {
@@ -107,14 +113,16 @@ void alist::prepend(void* item)
 /**
  * Append an item to the list
  */
-void alist::append(void* item)
+template <class T>
+void alist<T>::append(T* item)
 {
   GrowList();
   items[num_items++] = item;
 }
 
+template <class T>
 /* Remove an item from the list */
-void* alist::remove(int index)
+T* alist<T>::remove(int index)
 {
   void* item;
   if (index < 0 || index >= num_items) { return NULL; }
@@ -126,14 +134,16 @@ void* alist::remove(int index)
 
 
 /* Get the index item -- we should probably allow real indexing here */
-void* alist::get(int index)
+template <class T>
+T* alist<T>::get(int index)
 {
   if (index < 0 || index >= num_items) { return NULL; }
   return items[index];
 }
 
 /* Destroy the list and its contents */
-void alist::destroy()
+template <class T>
+void alist<T>::destroy()
 {
   if (items) {
     if (own_items) {
@@ -149,7 +159,8 @@ void alist::destroy()
 
 // convert alist to std::list<std::string>
 
-std::list<std::string> alist::to_std_list_string()
+template <class T>
+std::list<std::string> alist<T>::to_std_list_string()
 {
   std::list<std::string> result;
   char* cur_cstring = nullptr;

@@ -41,6 +41,7 @@
 #include "lib/watchdog.h"
 #include "lib/util.h"
 #include "lib/address_conf.h"
+#include "lib/alist.h"
 
 using namespace filedaemon;
 

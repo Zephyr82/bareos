@@ -31,7 +31,7 @@
 
 #include "lib/messages_resource.h"
 #include "lib/tls_conf.h"
-
+template <class T>
 class alist;
 class dlist;
 
@@ -74,10 +74,10 @@ class DirectorResource
   bool conn_from_dir_to_fd = false; /* Allow incoming connections */
   bool conn_from_fd_to_dir = false; /* Connect to director */
   bool monitor; /* Have only access to status and .status functions */
-  alist* allowed_script_dirs
+  alist<const char>* allowed_script_dirs
       = nullptr; /* Only allow to run scripts in this directories */
-  alist* allowed_job_cmds = nullptr; /* Only allow the following Job commands to
-                              be executed */
+  alist<const char>* allowed_job_cmds = nullptr; /* Only allow the following Job
+                              commands to be executed */
   uint64_t max_bandwidth_per_job = 0; /* Bandwidth limitation (per director) */
 
   DirectorResource() = default;
@@ -97,7 +97,7 @@ class ClientResource
   char* pid_directory = nullptr;
   char* subsys_directory = nullptr;
   char* plugin_directory = nullptr; /* Plugin directory */
-  alist* plugin_names = nullptr;
+  alist<const char>* plugin_names = nullptr;
   char* scripts_directory = nullptr;
   MessagesResource* messages = nullptr; /* Daemon message handler */
   uint32_t MaxConcurrentJobs = 0;
@@ -111,11 +111,12 @@ class ClientResource
   bool allow_bw_bursting = false; /* Allow bursting with bandwidth limiting */
   bool pki_sign
       = false; /* Enable Data Integrity Verification via Digital Signatures */
-  bool pki_encrypt = false;                        /* Enable Data Encryption */
-  char* pki_keypair_file = nullptr;                /* PKI Key Pair File */
-  alist* pki_signing_key_files = nullptr;          /* PKI Signing Key Files */
-  alist* pki_master_key_files = nullptr;           /* PKI Master Key Files */
-  crypto_cipher_t pki_cipher = CRYPTO_CIPHER_NONE; /* PKI Cipher to use */
+  bool pki_encrypt = false;         /* Enable Data Encryption */
+  char* pki_keypair_file = nullptr; /* PKI Key Pair File */
+  alist<const char>* pki_signing_key_files
+      = nullptr;                                     /* PKI Signing Key Files */
+  alist<const char>* pki_master_key_files = nullptr; /* PKI Master Key Files */
+  crypto_cipher_t pki_cipher = CRYPTO_CIPHER_NONE;   /* PKI Cipher to use */
   bool always_use_lmdb = false; /* Use LMDB for accurate data */
   uint32_t lmdb_threshold = 0;  /* Switch to using LDMD when number of accurate
                                entries exceeds treshold. */
@@ -123,11 +124,11 @@ class ClientResource
 
   std::vector<X509_KEYPAIR*> pki_signers{};    /* Shared PKI Trusted Signers */
   std::vector<X509_KEYPAIR*> pki_recipients{}; /* Shared PKI Recipients */
-  alist* allowed_script_dirs
+  alist<const char>* allowed_script_dirs
       = nullptr; /* Only allow to run scripts in this directories */
-  alist* allowed_job_cmds = nullptr; /* Only allow the following Job commands to
-                                be executed */
-  char* verid = nullptr;             /* Custom Id to print in version command */
+  alist<const char>* allowed_job_cmds = nullptr; /* Only allow the following Job
+                                commands to be executed */
+  char* verid = nullptr; /* Custom Id to print in version command */
   char* secure_erase_cmdline = nullptr; /* Cmdline to execute to perform secure
                                   erase of file */
   char* log_timestamp_format = nullptr; /* Timestamp format to use in generic

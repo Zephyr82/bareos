@@ -45,6 +45,7 @@
 #include <unordered_set>
 
 
+struct job_callback_item;
 class BareosDb;
 class BareosSocket;
 class dlist;
@@ -150,7 +151,7 @@ class JobControlRecord {
   dlist* msg_queue{};             /**< Queued messages */
   pthread_mutex_t msg_queue_mutex = PTHREAD_MUTEX_INITIALIZER; /**< message queue mutex */
   bool dequeuing_msgs{};          /**< Set when dequeuing messages */
-  alist job_end_callbacks;        /**< callbacks called at Job end */
+  alist<job_callback_item> job_end_callbacks;        /**< callbacks called at Job end */
   POOLMEM* VolumeName{};          /**< Volume name desired -- pool_memory */
   POOLMEM* errmsg{};              /**< Edited error message */
   char Job[MAX_NAME_LENGTH]{};    /**< Unique name of this Job */

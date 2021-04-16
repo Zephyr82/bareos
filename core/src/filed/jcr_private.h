@@ -74,7 +74,7 @@ struct JobControlRecordPrivate {
   std::atomic<bool> hb_running{};             /**< Heartbeat running */
   std::shared_ptr<BareosSocket> hb_bsock;     /**< Duped SD socket */
   std::shared_ptr<BareosSocket> hb_dir_bsock; /**< Duped DIR socket */
-  alist* RunScripts{};            /**< Commands to run before and after job */
+  alist<RunScript>* RunScripts{};            /**< Commands to run before and after job */
   CryptoContext crypto;           /**< Crypto ctx */
   filedaemon::DirectorResource* director{}; /**< Director resource */
   bool enable_vss{};              /**< VSS used by FD */

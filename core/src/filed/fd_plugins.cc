@@ -1518,7 +1518,7 @@ BxattrExitCode PluginBuildXattrStreams(JobControlRecord* jcr,
 {
   Plugin* plugin;
 #if defined(HAVE_XATTR)
-  alist* xattr_value_list = NULL;
+  alist<xattr_t>* xattr_value_list = NULL;
 #endif
   BxattrExitCode retval = BxattrExitCode::kError;
 
@@ -1578,7 +1578,7 @@ BxattrExitCode PluginBuildXattrStreams(JobControlRecord* jcr,
                                   + current_xattr->value_length;
 
         if (xattr_value_list == NULL) {
-          xattr_value_list = new alist(10, not_owned_by_alist);
+          xattr_value_list = new alist<xattr_t>(10, not_owned_by_alist);
         }
 
         xattr_value_list->append(current_xattr);
@@ -1649,7 +1649,7 @@ BxattrExitCode PluginParseXattrStreams(JobControlRecord* jcr,
 {
 #if defined(HAVE_XATTR)
   Plugin* plugin;
-  alist* xattr_value_list = NULL;
+  alist<xattr_t>* xattr_value_list = NULL;
 #endif
   BxattrExitCode retval = BxattrExitCode::kError;
 
@@ -1663,7 +1663,7 @@ BxattrExitCode PluginParseXattrStreams(JobControlRecord* jcr,
     xattr_t* current_xattr = nullptr;
     struct xattr_pkt xp;
 
-    xattr_value_list = new alist(10, not_owned_by_alist);
+    xattr_value_list = new alist<xattr_t>(10, not_owned_by_alist);
 
     if (UnSerializeXattrStream(jcr, xattr_data, content, content_length,
                                xattr_value_list)

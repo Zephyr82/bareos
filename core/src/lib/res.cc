@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -667,11 +667,14 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
                                         int index,
                                         int pass)
 {
-  alist** alistvalue = GetItemVariablePointer<alist**>(*item);
+  alist<BareosResource>** alistvalue
+      = GetItemVariablePointer<alist<BareosResource>**>(*item);
   if (pass == 2) {
-    if (!*alistvalue) { *alistvalue = new alist(10, not_owned_by_alist); }
+    if (!*alistvalue) {
+      *alistvalue = new alist<BareosResource>(10, not_owned_by_alist);
+    }
   }
-  alist* list = *alistvalue;
+  alist<BareosResource>* list = *alistvalue;
 
   int token = BCT_COMMA;
   while (token == BCT_COMMA) {
@@ -741,11 +744,14 @@ void ConfigurationParser::StoreAlistStr(LEX* lc,
                                         int index,
                                         int pass)
 {
-  alist** alistvalue = GetItemVariablePointer<alist**>(*item);
+  alist<const char>** alistvalue
+      = GetItemVariablePointer<alist<const char>**>(*item);
   if (pass == 2) {
-    if (!*alistvalue) { *alistvalue = new alist(10, owned_by_alist); }
+    if (!*alistvalue) {
+      *alistvalue = new alist<const char>(10, owned_by_alist);
+    }
   }
-  alist* list = *alistvalue;
+  alist<const char>* list = *alistvalue;
 
   int token = BCT_COMMA;
   while (token == BCT_COMMA) {
@@ -790,9 +796,12 @@ void ConfigurationParser::StoreAlistDir(LEX* lc,
                                         int pass)
 {
   if (pass == 2) {
-    alist** alistvalue = GetItemVariablePointer<alist**>(*item);
-    if (!*alistvalue) { *alistvalue = new alist(10, owned_by_alist); }
-    alist* list = *alistvalue;
+    alist<const char>** alistvalue
+        = GetItemVariablePointer<alist<const char>**>(*item);
+    if (!*alistvalue) {
+      *alistvalue = new alist<const char>(10, owned_by_alist);
+    }
+    alist<const char>* list = *alistvalue;
 
     LexGetToken(lc, BCT_STRING); /* scan next item */
     Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list,
@@ -838,8 +847,9 @@ void ConfigurationParser::StorePluginNames(LEX* lc,
     return;
   }
 
-  alist** alistvalue = GetItemVariablePointer<alist**>(*item);
-  if (!*alistvalue) { *alistvalue = new alist(10, owned_by_alist); }
+  alist<const char>** alistvalue
+      = GetItemVariablePointer<alist<const char>**>(*item);
+  if (!*alistvalue) { *alistvalue = new alist<const char>(10, owned_by_alist); }
 
   bool finish = false;
   while (!finish) {
@@ -2008,7 +2018,7 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
        * One line for each member of the list
        */
       send.KeyMultipleStringsOnePerLine(
-          item.name, GetItemVariable<alist*>(item), inherited);
+          item.name, GetItemVariable<alist<const char>*>(item), inherited);
       break;
     }
     case CFG_TYPE_ALIST_RES: {
@@ -2016,8 +2026,8 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
        * Each member of the list is comma-separated
        */
       send.KeyMultipleStringsOnePerLine(
-          item.name, GetItemVariable<alist*>(item), GetResourceName, inherited,
-          true, false);
+          item.name, GetItemVariable<alist<const char>*>(item), GetResourceName,
+          inherited, true, false);
       break;
     }
     case CFG_TYPE_RES: {

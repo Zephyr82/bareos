@@ -33,7 +33,6 @@
 #include "jcr.h"
 #include "lib/bareos_resource.h"
 
-class alist;
 
 /* Usage:
  *
@@ -109,14 +108,14 @@ RunScript* DuplicateRunscript(RunScript* src);
 
 /* launch each script from runscripts*/
 int RunScripts(JobControlRecord* jcr,
-               alist* runscripts,
+               alist<RunScript>* runscripts,
                const char* name,
-               alist* allowed_script_dirs = NULL);
+               alist<const char>* allowed_script_dirs = NULL);
 
 void FreeRunscript(RunScript* script);
 
 /* foreach_alist free RunScript */
-void FreeRunscripts(alist* runscripts); /* you have to free alist */
+void FreeRunscripts(alist<RunScript>* runscripts); /* you have to free alist */
 
 extern bool (*console_command)(JobControlRecord* jcr, const char* cmd);
 

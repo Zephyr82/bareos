@@ -25,6 +25,7 @@
 #define BAREOS_LIB_RESOURCE_ITEM_H_
 
 struct s_password;
+template <class T>
 class alist;
 class dlist;
 
