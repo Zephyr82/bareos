@@ -34,6 +34,7 @@
 #include "lib/messages_resource.h"
 #include "lib/tls_conf.h"
 
+template <class T>
 class alist;
 class dlist;
 
@@ -104,7 +105,7 @@ class StorageResource
   char* pid_directory = nullptr;
   char* subsys_directory = nullptr;
   char* plugin_directory = nullptr; /**< Plugin directory */
-  alist* plugin_names = nullptr;
+  alist<const char>* plugin_names = nullptr;
   char* scripts_directory = nullptr;
   std::vector<std::string> backend_directories;
   uint32_t MaxConcurrentJobs = 0;      /**< Maximum concurrent jobs to run */

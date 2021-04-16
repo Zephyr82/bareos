@@ -201,5 +201,140 @@ inline void alist<T>::grow(int num)
   num_grow = num;
 }
 
+/**
+ * Private grow list function. Used to insure that
+ *   at least one more "slot" is available.
+ */
+template <class T>
+void alist<T>::GrowList()
+{
+  if (items == NULL) {
+    if (num_grow == 0) { num_grow = 1; /* default if not initialized */ }
+    items = (T**)malloc(num_grow * sizeof(T*));
+    max_items = num_grow;
+  } else if (num_items == max_items) {
+    max_items += num_grow;
+    items = (T**)realloc(items, max_items * sizeof(T*));
+  }
+}
+
+template <class T>
+T* alist<T>::first()
+{
+  cur_item = 1;
+  if (num_items == 0) {
+    return NULL;
+  } else {
+    return items[0];
+  }
+}
+
+template <class T>
+T* alist<T>::last()
+{
+  if (num_items == 0) {
+    return NULL;
+  } else {
+    cur_item = num_items;
+    return items[num_items - 1];
+  }
+}
+
+template <class T>
+T* alist<T>::next()
+{
+  if (cur_item >= num_items) {
+    return NULL;
+  } else {
+    return items[cur_item++];
+  }
+}
+
+template <class T>
+T* alist<T>::prev()
+{
+  if (cur_item <= 1) {
+    return NULL;
+  } else {
+    return items[--cur_item];
+  }
+}
+
+/**
+ * prepend an item to the list -- i.e. add to beginning
+ */
+template <class T>
+void alist<T>::prepend(T* item)
+{
+  GrowList();
+  if (num_items == 0) {
+    items[num_items++] = item;
+    return;
+  }
+  for (int i = num_items; i > 0; i--) { items[i] = items[i - 1]; }
+  items[0] = item;
+  num_items++;
+}
+
+
+/**
+ * Append an item to the list
+ */
+template <class T>
+void alist<T>::append(T* item)
+{
+  GrowList();
+  items[num_items++] = item;
+}
+
+template <class T>
+/* Remove an item from the list */
+T* alist<T>::remove(int index)
+{
+  T* item;
+  if (index < 0 || index >= num_items) { return NULL; }
+  item = items[index];
+  num_items--;
+  for (int i = index; i < num_items; i++) { items[i] = items[i + 1]; }
+  return item;
+}
+
+
+/* Get the index item -- we should probably allow real indexing here */
+template <class T>
+T* alist<T>::get(int index)
+{
+  if (index < 0 || index >= num_items) { return NULL; }
+  return items[index];
+}
+
+/* Destroy the list and its contents */
+template <class T>
+void alist<T>::destroy()
+{
+  if (items) {
+    if (own_items) {
+      for (int i = 0; i < num_items; i++) {
+        free((void*)(items[i]));
+        items[i] = NULL;
+      }
+    }
+    free(items);
+    items = NULL;
+  }
+}
+
+// convert alist to std::list<std::string>
+
+template <class T>
+std::list<std::string> alist<T>::to_std_list_string()
+{
+  std::list<std::string> result;
+  char* cur_cstring = nullptr;
+  foreach_alist (cur_cstring, this) {
+    result.push_back(cur_cstring);
+  }
+  return result;
+}
 
 #endif  // BAREOS_LIB_ALIST_H_

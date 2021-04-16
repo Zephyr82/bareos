@@ -778,7 +778,7 @@ static inline void SendDriveReserveMessages(JobControlRecord* jcr,
                                             StatusPacket* sp)
 {
   int i;
-  alist* msgs;
+  alist<const char>* msgs;
   char* msg;
 
   jcr->lock();
