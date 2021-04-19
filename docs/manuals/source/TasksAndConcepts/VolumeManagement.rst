@@ -624,8 +624,7 @@ The algorithm described below assumes that :strong:`Auto Prune`\  is enabled, th
 
 .. warning::
 
-   We strongly recommend against the use of :strong:`Purge Oldest Volume`\  as it can quite easily lead to loss of current backup
-      data.
+   We strongly recommend against the use of :strong:`Purge Oldest Volume`\  as it can quite easily lead to loss of current backup data.
 
 #. Give up and ask operator.
 
